@@ -8,94 +8,94 @@ from models.chess_pieces import (
     ChessKnight, ChessPawn, ChessPillar, ChessWisp, ChessLance
 )
 
-# 駒クラスを名前でマッピング（将棋とチェスの両方対応）
-PIECE_CLASSES = {
-    # 将棋の駒
-    "shogi_king": ShogiKing,
-    "shogi_rook": ShogiRook,
-    "shogi_bishop": ShogiBishop,
-    "shogi_gold": ShogiGold,
-    "shogi_silver": ShogiSilver,
-    "shogi_knight": ShogiKnight,
-    "shogi_lance": ShogiLance,
-    "shogi_pawn": ShogiPawn,
-    "shogi_jumper": ShogiJumper,
-    "shogi_phoenix": ShogiPhoenix,
-
-    # チェスの駒
-    "chess_king": ChessKing,
-    "chess_queen": ChessQueen,
-    "chess_rook": ChessRook,
-    "chess_bishop": ChessBishop,
-    "chess_knight": ChessKnight,
-    "chess_pawn": ChessPawn,
-    "chess_pillar": ChessPillar,
-    "chess_wisp": ChessWisp,
-    "chess_lance": ChessLance
-}
-
 SHOGI_BOARD_SIZE = 9
 CHESS_BOARD_SIZE = 8
 
+PIECE_CLASSES = {
+    # 将棋の駒
+    "ShogiKing": ShogiKing,
+    "ShogiRook": ShogiRook,
+    "ShogiBishop": ShogiBishop,
+    "ShogiGold": ShogiGold,
+    "ShogiSilver": ShogiSilver,
+    "ShogiKnight": ShogiKnight,
+    "ShogiLance": ShogiLance,
+    "ShogiPawn": ShogiPawn,
+    "ShogiJumper": ShogiJumper,
+    "ShogiPhoenix": ShogiPhoenix,
+
+    # チェスの駒
+    "ChessKing": ChessKing,
+    "ChessQueen": ChessQueen,
+    "ChessRook": ChessRook,
+    "ChessBishop": ChessBishop,
+    "ChessKnight": ChessKnight,
+    "ChessPawn": ChessPawn,
+    "ChessPillar": ChessPillar,
+    "ChessWisp": ChessWisp,
+    "ChessLance": ChessLance
+}
+
 SHOGI_BOARD_POSITIONS = {
     "shogi": {
-        "shogi_king": [(4, 0)],
-        "shogi_rook": [(1, 1)],
-        "shogi_bishop": [(7, 1)],
-        "shogi_gold": [(3, 0), (5, 0)],
-        "shogi_silver": [(2, 0), (6, 0)],
-        "shogi_knight": [(1, 0), (7, 0)],
-        "shogi_lance": [(0, 0), (8, 0)],
-        "shogi_pawn": [(x, 2) for x in range(SHOGI_BOARD_SIZE)],
+        "ShogiKing": [(4, 0)],
+        "ShogiRook": [(1, 1)],
+        "ShogiBishop": [(7, 1)],
+        "ShogiGold": [(3, 0), (5, 0)],
+        "ShogiSilver": [(2, 0), (6, 0)],
+        "ShogiKnight": [(1, 0), (7, 0)],
+        "ShogiLance": [(0, 0), (8, 0)],
+        "ShogiPawn": [(x, 2) for x in range(SHOGI_BOARD_SIZE)],
     },
     "wideChess": {
-        "chess_king": [(5, 0)],
-        "chess_queen": [(3, 0)],
-        "chess_rook": [(0, 0), (8, 0)],
-        "chess_bishop": [(2, 0), (6, 0)],
-        "chess_knight": [(1, 0), (7, 0)],
-        "chess_pawn": [(x, 1) for x in range(SHOGI_BOARD_SIZE)],
+        "ChessKing": [(5, 0)],
+        "ChessQueen": [(3, 0)],
+        "ChessRook": [(0, 0), (8, 0)],
+        "ChessBishop": [(2, 0), (6, 0)],
+        "ChessKnight": [(1, 0), (7, 0)],
+        "ChessPawn": [(x, 1) for x in range(SHOGI_BOARD_SIZE)],
     },
     "replaceShogi": {
-        "chess_king": [(4, 0)],
-        "chess_rook": [(1, 1)],
-        "chess_bishop": [(7, 1)],
-        "chess_pillar": [(3, 0), (5, 0)],
-        "chess_wisp": [(2, 0), (6, 0)],
-        "chess_knight": [(1, 0), (7, 0)],
-        "chess_lance": [(0, 0), (8, 0)],
-        "chess_pawn": [(x, 2) for x in range(SHOGI_BOARD_SIZE)],
+        "ChessKing": [(4, 0)],
+        "ChessRook": [(1, 1)],
+        "ChessBishop": [(7, 1)],
+        "ChessPillar": [(3, 0), (5, 0)],
+        "ChessWisp": [(2, 0), (6, 0)],
+        "ChessKnight": [(1, 0), (7, 0)],
+        "ChessLance": [(0, 0), (8, 0)],
+        "ChessPawn": [(x, 2) for x in range(SHOGI_BOARD_SIZE)],
     }
 }
 
 CHESS_BOARD_POSITIONS = {
     "chess": {
-        "chess_king": [(4, 0)],
-        "chess_queen": [(3, 0)],
-        "chess_rook": [(0, 0), (7, 0)],
-        "chess_bishop": [(2, 0), (5, 0)],
-        "chess_knight": [(1, 0), (6, 0)],
-        "chess_pawn": [(x, 1) for x in range(CHESS_BOARD_SIZE)],
+        "ChessKing": [(4, 0)],
+        "ChessQueen": [(3, 0)],
+        "ChessRook": [(0, 0), (7, 0)],
+        "ChessBishop": [(2, 0), (5, 0)],
+        "ChessKnight": [(1, 0), (6, 0)],
+        "ChessPawn": [(x, 1) for x in range(CHESS_BOARD_SIZE)],
     },
     "narrowShogi": {
-        "shogi_king": [(4, 0)],
-        "shogi_rook": [(1, 1)],
-        "shogi_bishop": [(6, 1)],
-        "shogi_gold": [(3, 0), (5, 0)],
-        "shogi_silver": [(2, 0), (6, 0)],
-        "shogi_knight": [(1, 0)],
-        "shogi_lance": [(0, 0), (7, 0)],
-        "shogi_pawn": [(x, 2) for x in range(CHESS_BOARD_SIZE)],
+        "ShogiKing": [(4, 0)],
+        "ShogiRook": [(1, 1)],
+        "ShogiBishop": [(6, 1)],
+        "ShogiGold": [(3, 0), (5, 0)],
+        "ShogiSilver": [(2, 0), (6, 0)],
+        "ShogiKnight": [(1, 0)],
+        "ShogiLance": [(0, 0), (7, 0)],
+        "ShogiPawn": [(x, 2) for x in range(CHESS_BOARD_SIZE)],
     },
     "replaceChess": {
-        "shogi_king": [(4, 0)],
-        "shogi_phoenix": [(3, 0)],
-        "shogi_rook": [(0, 0), (7, 0)],
-        "shogi_bishop": [(2, 0), (5, 0)],
-        "shogi_jumper": [(1, 0), (6, 0)],
-        "shogi_pawn": [(x, 1) for x in range(CHESS_BOARD_SIZE)],
+        "ShogiKing": [(4, 0)],
+        "ShogiPhoenix": [(3, 0)],
+        "ShogiRook": [(0, 0), (7, 0)],
+        "ShogiBishop": [(2, 0), (5, 0)],
+        "ShogiJumper": [(1, 0), (6, 0)],
+        "ShogiPawn": [(x, 1) for x in range(CHESS_BOARD_SIZE)],
     }
 }
+
 
 PROMOTE_LINE = {
     "shogi": 3,

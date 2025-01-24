@@ -1,77 +1,57 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, json
 from models.game import Game
 from models.board import Board
 from models.player import Player
-from models.send_data_manager import SendDataManager
+from models.redis_client import get_redis_client
 
 game_routes = Blueprint("game_routes", __name__)
 
-# グローバル変数でゲーム状態を保持
-game_instance = None
+
+# データ保存 (14日間 = 14 * 24 * 60 * 60秒)
+TTL_IN_SECONDS = 14 * 24 * 60 * 60
 
 @game_routes.route("/initialize", methods=["POST"])
 def initialize_game():
     """
     ゲームを初期化します。
-    フロントエンドからプレイヤー情報を受け取り、ゲームを開始します。
     """
-    global game_instance
     data = request.json
+    user_id = data["userId"]
 
     # プレイヤーとボードを作成
     black = Player(player_id=data["black"]["name"], team="black")
     white = Player(player_id=data["white"]["name"], team="white")
+    board = Board(
+        board_type=data["boardType"],
+        black_board=data["black"]["boardType"],
+        white_board=data["white"]["boardType"],
+        black_placeable=data["black"]["piecePlaceable"],
+        white_placable=data["white"]["piecePlaceable"],
+    )
 
-    board_type = data["boardType"]
-    black_board, black_placeable = data["black"]["boardType"], data["black"]["piecePlaceable"]
-    white_board, white_placeable = data["white"]["boardType"], data["white"]["piecePlaceable"]
+    # ゲームオブジェクトを作成
+    game = Game(black=black, white=white, board=board)
 
-    board = Board(board_type=board_type, black_board=black_board, white_board=white_board, black_placeable=black_placeable, white_placable=white_placeable)
-    
-    # ゲームを初期化
-    game_instance = Game(black=black, white=white, board=board)
+    print(len(json.dumps(game.to_dict())))
+    # ゲーム状態を保存 (Redisまたはデータベース)
+    get_redis_client().set(f"game_cls_dict:{user_id}", json.dumps(game.to_dict()), ex=TTL_IN_SECONDS)
 
-    board_settings = {
-        "type": board_type,
-        "size": board.size,
-        "blackBoard": black_board,
-        "whiteBoard": white_board
-    }
-
-    return jsonify({ "message": "Game initialized successfully.", "boardSettings": board_settings }), 200
+    return jsonify({"message": "Game initialized successfully.", "userId": user_id}), 200
 
 
-@game_routes.route("/state", methods=["GET"])
-def get_game_state():
+@game_routes.route("/state/<user_id>", methods=["GET"])
+def get_game_instance(user_id):
     """
-    現在のゲーム状態をJSON形式で返します。
+    指定されたユーザーのゲーム状態を返します。
     """
-    if not game_instance:
+    game_cls_dict = get_redis_client().get(f"game_cls_dict:{user_id}")
+
+    if not game_cls_dict:
         return jsonify({"error": "Game not initialized."}), 400
-    
-    board_settings = {
-        "type": game_instance.board.board_type,
-        "size": game_instance.board.size,
-        "blackBoard": game_instance.board.board_type,
-        "whiteBoard": game_instance.board.white_board
-    }
 
-    game_state = {
-        "pieces": game_instance.board.pieces,
-        "board_settings": board_settings,
-        "board_size": board_settings["size"],
-        "black_captured_pieces": game_instance.black.captured_pieces,
-        "white_captured_pieces": game_instance.white.captured_pieces,
-        "current_team": game_instance.current_player.team,
-        "step": game_instance.step,
-        "last_move": game_instance.last_move,
-        "white_checked": False, # game_instance.white.checked,  # 仮に`checked`プロパティが存在する場合
-        "black_checked": False, # game_instance.black.checked,  # 同上
-        "game_result": None,  # ゲームの結果（引き分けなど）
-        "error": None  # エラーメッセージ
-    }
-
-    return jsonify(SendDataManager.create_json(game_state)), 200
+    game_cls_dict = json.loads(game_cls_dict)
+    game_instance = Game.from_dict(game_cls_dict)
+    return jsonify(game_instance.get_game_data_dict()), 200
 
 
 @game_routes.route("/action", methods=["POST"])
@@ -79,22 +59,34 @@ def perform_action():
     """
     プレイヤーのアクションを受け付け、ゲーム状態を更新します。
     """
+    data = request.json
+    user_id = data["userId"]
 
-    global game_instance
-    if not game_instance:
+    # 現在のゲーム状態を取得
+    game_state_json = get_redis_client().get(f"game_cls_dict:{user_id}")
+    if not game_state_json:
         return jsonify({"error": "Game not initialized."}), 400
 
-    data = request.json
+    game_cls_dict = json.loads(game_state_json)
+
     try:
-        # アクション実行
-        game_instance.action(
+        # アクションを実行
+        # 仮想的に `Game` クラスのインスタンスでアクションを処理
+        game = Game.from_dict(game_cls_dict)
+        game.action(
             target_piece_id=data["targetPieceId"],
             action_type=data["actionType"],
             promote=data["promote"],
             x=data["x"],
-            y=data["y"]
+            y=data["y"],
         )
+
+        # 状態を更新
+        get_redis_client().set(f"game_cls_dict:{user_id}", json.dumps(game.to_dict()), ex=TTL_IN_SECONDS)
+        if data:
+            get_redis_client().expire(f"game_cls_dict:{user_id}", TTL_IN_SECONDS)
+
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
-    
-    return get_game_state()
+
+    return jsonify(game.get_game_data_dict()), 200

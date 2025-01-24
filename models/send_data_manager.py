@@ -76,7 +76,7 @@ class SendDataManager:
         return actions
 
     @staticmethod
-    def create_json(game_state: dict) -> dict:
+    def create_game_data_dict(game_state: dict) -> dict:
         return {
             "board": SendDataManager.create_board(game_state["pieces"], game_state["board_size"]),
             "boardSettings": game_state["board_settings"],

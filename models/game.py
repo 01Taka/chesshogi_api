@@ -2,6 +2,7 @@ from models.board import Board
 from models.player import Player
 from models.piece import Piece
 from models.chess_pieces import ChessKing, ChessRook, ChessPawn
+from models.send_data_manager import SendDataManager
 import copy
 
 class Game:
@@ -16,7 +17,7 @@ class Game:
         self.board_count = {}
         self.step = 1
         self.last_move = None  # 最後の移動や配置アクションを記録する辞書
-
+    
     @property
     def black(self):
         return self.__black
@@ -185,3 +186,49 @@ class Game:
 
     def game_set(self):
         print("引き分け")
+
+    def to_dict(self):
+        return {
+            "black": self.black.to_dict(),
+            "white": self.white.to_dict(),
+            "board": self.board.to_dict(),
+            # "current_player": self.current_player.team,
+            "step": self.step,
+            "last_move": self.last_move,
+        }
+
+    @staticmethod
+    def from_dict(data):
+        black = Player.from_dict(data["black"])
+        white = Player.from_dict(data["white"])
+        board = Board.from_dict(data["board"])
+        game = Game(black=black, white=white, board=board)
+        # game.current_player = black if data["current_player"] == "black" else white
+        game.step = data["step"]
+        game.last_move = data["last_move"]
+        return game
+    
+    def get_game_data_dict(self):
+        board_settings = {
+            "type": self.board.board_type,
+            "size": self.board.size,
+            "blackBoard": self.board.board_type,
+            "whiteBoard": self.board.white_board
+        }
+
+        game_state = {
+            "pieces": self.board.pieces or {},
+            "board_settings": board_settings,
+            "board_size": board_settings["size"],
+            "black_captured_pieces": self.black.captured_pieces or [],
+            "white_captured_pieces": self.white.captured_pieces or [],
+            "current_team": self.current_player.team,
+            "step": self.step,
+            "last_move": self.last_move,
+            "white_checked": False, # game_instance.white.checked,  # 仮にcheckedプロパティが存在する場合
+            "black_checked": False, # game_instance.black.checked,  # 同上
+            "game_result": None,  # ゲームの結果（引き分けなど）
+            "error": None  # エラーメッセージ
+        }
+
+        return SendDataManager.create_game_data_dict(game_state)

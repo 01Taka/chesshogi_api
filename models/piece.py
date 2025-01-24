@@ -37,7 +37,7 @@ class Piece:
     
     @property
     def position(self):
-      return self.__position
+      return tuple(self.__position) if self.__position else None
     
     @property
     def last_move(self):
@@ -167,3 +167,21 @@ class Piece:
                     moves.append((nx, ny))
 
         return moves
+
+    @classmethod
+    def get_instance(cls, piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row):
+        return Piece(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row)
+    
+    def to_dict(self):
+        return {
+            "class_name": self.__class__.__name__,
+            "piece_id": self.__piece_id,
+            "position": self.__position,
+            "team": self.__team,
+            "board_size": self.__board_size,
+            "promote_line": self.__promote_line,
+            "is_banned_place": self.__is_banned_place,
+            "is_banned_promote": self.__is_banned_promote,
+            "is_promoted": self.__is_promoted,
+            "immobile_row": self.__immobile_row
+        }
