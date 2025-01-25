@@ -212,7 +212,7 @@ class Game:
         board_settings = {
             "type": self.board.board_type,
             "size": self.board.size,
-            "blackBoard": self.board.board_type,
+            "blackBoard": self.board.black_board,
             "whiteBoard": self.board.white_board
         }
 
