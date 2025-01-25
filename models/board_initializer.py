@@ -210,7 +210,7 @@ class BoardInitializer:
             positions=BoardInitializer.reverse_positions(positions[white_board], board_size, reverse_type),
             team="white",
             board_size=board_size,
-            promote_line=PROMOTE_LINE[black_board],
+            promote_line=PROMOTE_LINE[white_board],
             placeable=white_placable,
             start_id=next_id,
         )

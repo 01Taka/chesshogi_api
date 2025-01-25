@@ -138,11 +138,15 @@ class ChessKnight(ChessPiece):
 class ChessPawn(ChessPiece):
     def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=True, is_banned_promote=False, is_promoted=False, immobile_row=1):
         super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row)
-        self.__initial_row = position[1]
+        self.__initial_row = position[1] if position and not self.last_move else None
 
     @property
     def initial_row(self):
         return self.__initial_row
+    
+    def on_place(self, position, pieces):
+        self.__initial_row = None
+        return super().on_place(position, pieces)
 
     def legal_moves(self, pieces: dict):
         """Pawn's legal moves: forward 1 square, optionally 2 squares on first move, diagonal capture, and en passant"""
@@ -156,7 +160,7 @@ class ChessPawn(ChessPiece):
             # Forward move
             if not pieces.get((x, y + direction)):
                 moves.append((x, y + direction))
-                if self.initial_row == y and not pieces.get((x, y + 2 * direction)):
+                if self.initial_row and self.initial_row == y and not pieces.get((x, y + 2 * direction)):
                     moves.append((x, y + 2 * direction))
 
             # Diagonal captures and en passant

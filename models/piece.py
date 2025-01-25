@@ -108,6 +108,7 @@ class Piece:
     def on_place(self, position, pieces: dict):
         if self.can_place(position, pieces):
             self.__position = position
+            self.__last_move = position
 
     def can_place(self, position, pieces: dict):
         return not self.is_banned_place and self.is_within_board(position) and not pieces.get(position) and (not self.immobile_row or self.is_behind_line(position[1], self.immobile_row))
