@@ -16,6 +16,7 @@ class SendDataManager:
                         "promotable": not piece.is_promoted and not piece.is_banned_promote,
                         "promoteLine": piece.promote_line,
                         "immobileRow": piece.immobile_row,
+                        "rearranged": piece.is_rearranged,
                         "team": piece.team,
                     }
                     row.append(data)

@@ -88,7 +88,9 @@ class Board:
             is_banned_place=data["is_banned_place"],
             is_banned_promote=data["is_banned_promote"],
             is_promoted=data["is_promoted"],
-            immobile_row=data["immobile_row"]
+            immobile_row=data["immobile_row"],
+            last_move=data["last_move"],
+            is_rearranged=data["is_rearranged"]
         )
 
     def to_dict(self):

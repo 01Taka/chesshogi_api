@@ -5,16 +5,30 @@ class Piece:
 
     __UP_DOWN_LEFT_RIGHT = [(0, 1), (1, 0), (0, -1), (-1, 0)]
     
-    def __init__(self, piece_id: str, position: None | tuple[int, int], team: str, board_size: int, promote_line: int, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row = None):
+    def __init__(
+            self,
+            piece_id: str,
+            position: None | tuple[int, int],
+            team: str,
+            board_size: int,
+            promote_line: int,
+            is_banned_place=False,
+            is_banned_promote=False,
+            is_promoted=False,
+            immobile_row=None,
+            last_move=None,
+            is_rearranged=False
+    ):
         self.__piece_id = piece_id
         self.__board_size = board_size
         self.__promote_line = promote_line
         self.__is_banned_place = is_banned_place
         self.__is_banned_promote = is_banned_promote
         self.__immobile_row = immobile_row
+        self.__is_rearranged = is_rearranged
 
         self.__position = position
-        self.__last_move = None
+        self.__last_move = last_move
         self.__team = team
         self.__is_promoted = is_promoted
 
@@ -75,6 +89,10 @@ class Piece:
     @property
     def immobile_row(self):
         return self.__immobile_row
+    
+    @property
+    def is_rearranged(self):
+        return self.__is_rearranged
 
     @property
     def name(self):
@@ -109,6 +127,7 @@ class Piece:
         if self.can_place(position, pieces):
             self.__position = position
             self.__last_move = position
+            self.__is_rearranged = True
 
     def can_place(self, position, pieces: dict):
         return not self.is_banned_place and self.is_within_board(position) and not pieces.get(position) and (not self.immobile_row or self.is_behind_line(position[1], self.immobile_row))
@@ -184,5 +203,7 @@ class Piece:
             "is_banned_place": self.__is_banned_place,
             "is_banned_promote": self.__is_banned_promote,
             "is_promoted": self.__is_promoted,
-            "immobile_row": self.__immobile_row
+            "immobile_row": self.__immobile_row,
+            "last_move": self.__last_move,
+            "is_rearranged": self.__is_rearranged
         }

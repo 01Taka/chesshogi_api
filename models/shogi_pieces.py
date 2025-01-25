@@ -8,8 +8,8 @@ class ShogiPiece(Piece):
     ]
 
 class ShogiKing(ShogiPiece):
-    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=True, is_promoted=False, immobile_row=None):
-        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row)
+    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=True, is_promoted=False, immobile_row=None, last_move=None, is_rearranged=False):
+        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
 
     def legal_moves(self, pieces: dict):
         """王の合法手: 周囲1マス"""
@@ -31,8 +31,8 @@ class ShogiBishop(ShogiPiece):
         return self.get_valid_moves(pieces, positions=positions, directions=directions)
 
 class ShogiPawn(ShogiPiece):
-    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row=1):
-        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row)
+    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row=1, last_move=None, is_rearranged=False):
+        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
 
     def legal_moves(self, pieces: dict):
         """歩兵の合法手: 前方1マス"""
@@ -40,14 +40,14 @@ class ShogiPawn(ShogiPiece):
         return self.get_valid_moves(pieces, positions=directions)
     
     def has_pawn_in_column(self, x, pieces: dict):
-        return any(isinstance(piece, ShogiPawn) and piece.team == self.team and piece.position[0] == x for piece in pieces)
+        return any(isinstance(piece, ShogiPawn) and piece.team == self.team and piece.position[0] == x for piece in pieces.values())
 
     def can_place(self, position, pieces: dict):
         return super().can_place(position, pieces) and not self.has_pawn_in_column(position[0], pieces)
 
 class ShogiLance(ShogiPiece):
-    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row=1):
-        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row)
+    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row=1, last_move=None, is_rearranged=False):
+        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
 
     def legal_moves(self, pieces: dict):
         directions = [(0, 1)] if not self.is_promoted else None
@@ -55,8 +55,8 @@ class ShogiLance(ShogiPiece):
         return self.get_valid_moves(pieces, positions=positions, directions=directions)
 
 class ShogiKnight(ShogiPiece):
-    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row=2):
-        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row)
+    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row=2, last_move=None, is_rearranged=False):
+        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
 
     def legal_moves(self, pieces: dict):
         """桂馬の合法手: 前方2マス+斜め1マス"""
@@ -64,8 +64,8 @@ class ShogiKnight(ShogiPiece):
         return self.get_valid_moves(pieces, positions=directions)
 
 class ShogiGold(ShogiPiece):
-    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=True, is_promoted=False, immobile_row=None):
-        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row)
+    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=True, is_promoted=False, immobile_row=None, last_move=None, is_rearranged=False):
+        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
 
     def legal_moves(self, pieces: dict):
         """金将の合法手: 前後左右と斜め前"""

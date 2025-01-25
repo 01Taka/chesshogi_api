@@ -32,7 +32,7 @@ class Game:
 
     @property
     def current_player(self):
-        return self.white if self.step % 2 == 0 else self.black
+        return self.white if self.step % 2 == 1 else self.black
 
     def action(self, target_piece_id, promote, action_type, x, y):
         if action_type == "move":
@@ -192,7 +192,6 @@ class Game:
             "black": self.black.to_dict(),
             "white": self.white.to_dict(),
             "board": self.board.to_dict(),
-            # "current_player": self.current_player.team,
             "step": self.step,
             "last_move": self.last_move,
         }
@@ -203,7 +202,6 @@ class Game:
         white = Player.from_dict(data["white"])
         board = Board.from_dict(data["board"])
         game = Game(black=black, white=white, board=board)
-        # game.current_player = black if data["current_player"] == "black" else white
         game.step = data["step"]
         game.last_move = data["last_move"]
         return game

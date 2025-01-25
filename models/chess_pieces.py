@@ -1,8 +1,8 @@
 from models.piece import Piece
 
 class ChessPiece(Piece):    
-    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=True, is_banned_promote=True, is_promoted=False, immobile_row=None):
-        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row)
+    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=True, is_banned_promote=True, is_promoted=False, immobile_row=None, last_move=None, is_rearranged=False):
+        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
 
 class ChessKing(ChessPiece):
     def legal_moves(self, pieces: dict):
@@ -136,22 +136,15 @@ class ChessKnight(ChessPiece):
         return self.get_valid_moves(pieces, positions=directions)
 
 class ChessPawn(ChessPiece):
-    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=True, is_banned_promote=False, is_promoted=False, immobile_row=1):
-        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row)
-        self.__initial_row = position[1] if position and not self.last_move else None
-
-    @property
-    def initial_row(self):
-        return self.__initial_row
-    
-    def on_place(self, position, pieces):
-        self.__initial_row = None
-        return super().on_place(position, pieces)
+    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=True, is_banned_promote=False, is_promoted=False, immobile_row=1, last_move=None, is_rearranged=False):
+        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
 
     def legal_moves(self, pieces: dict):
         """Pawn's legal moves: forward 1 square, optionally 2 squares on first move, diagonal capture, and en passant"""
         if self.is_promoted:
-            return self.get_valid_moves(pieces, directions=self.EVERY_DIRECTION)
+            positions = None if not self.is_rearranged else self.EVERY_DIRECTION
+            directions = self.EVERY_DIRECTION if not self.is_rearranged else []
+            return self.get_valid_moves(pieces, positions=positions, directions=directions)
         else:
             moves = []
             x, y = self.position
@@ -160,7 +153,7 @@ class ChessPawn(ChessPiece):
             # Forward move
             if not pieces.get((x, y + direction)):
                 moves.append((x, y + direction))
-                if self.initial_row and self.initial_row == y and not pieces.get((x, y + 2 * direction)):
+                if not self.last_move and not pieces.get((x, y + 2 * direction)):
                     moves.append((x, y + 2 * direction))
 
             # Diagonal captures and en passant
@@ -183,7 +176,6 @@ class ChessPawn(ChessPiece):
                 return target
         return None
 
-
 class ChessPillar(ChessPiece):
     def legal_moves(self, pieces: dict):
         """Bishop's legal moves: any number of squares diagonally"""
@@ -197,7 +189,11 @@ class ChessWisp(ChessPiece):
         return self.get_valid_moves(pieces, directions=directions, length=2)
 
 class ChessLance(ChessPiece):
+    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=True, is_banned_promote=False, is_promoted=False, immobile_row=1, last_move=None, is_rearranged=False):
+        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
+
     def legal_moves(self, pieces: dict):
         """Bishop's legal moves: any number of squares diagonally"""
-        directions = [(0, 1)]
-        return self.get_valid_moves(pieces, directions=directions) 
+        directions = [(0, 1)] if not self.is_promoted else None
+        positions = None if not self.is_promoted else self.EVERY_DIRECTION
+        return self.get_valid_moves(pieces, positions=positions, directions=directions)
