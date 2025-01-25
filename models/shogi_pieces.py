@@ -40,7 +40,7 @@ class ShogiPawn(ShogiPiece):
         return self.get_valid_moves(pieces, positions=directions)
     
     def has_pawn_in_column(self, x, pieces: dict):
-        return any(isinstance(piece, ShogiPawn) and piece.team == self.team and piece.position[0] == x for piece in pieces.values())
+        return any(isinstance(piece, ShogiPawn) and piece.team == self.team and not piece.is_promoted and piece.position[0] == x for piece in pieces.values())
 
     def can_place(self, position, pieces: dict):
         return super().can_place(position, pieces) and not self.has_pawn_in_column(position[0], pieces)
