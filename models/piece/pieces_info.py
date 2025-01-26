@@ -1,9 +1,9 @@
-from models.shogi_pieces import (
+from models.piece.shogi_pieces import (
     ShogiKing, ShogiRook, ShogiBishop, ShogiGold,
     ShogiSilver, ShogiKnight, ShogiLance, ShogiPawn,
     ShogiJumper, ShogiPhoenix
 )
-from models.chess_pieces import (
+from models.piece.chess_pieces import (
     ChessKing, ChessQueen, ChessRook, ChessBishop,
     ChessKnight, ChessPawn, ChessPillar, ChessWisp, ChessLance
 )

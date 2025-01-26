@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, json
 from models.game import Game
 from models.board import Board
-from models.player import Player
+from server.models.game.player import Player
 from models.redis_client import get_redis_client
 
 game_routes = Blueprint("game_routes", __name__)

@@ -1,4 +1,4 @@
-from models.piece import Piece 
+from models.piece.piece import Piece 
 
 class ShogiPiece(Piece):
     DEFAULT_PROMOTE_MOVES = [

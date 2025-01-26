@@ -1,8 +1,9 @@
-from models.board import Board
-from models.player import Player
-from models.piece import Piece
-from models.chess_pieces import ChessKing, ChessRook, ChessPawn
+from models.game.board import Board
+from server.models.game.player import Player
+from models.piece.piece import Piece
+from models.piece.chess_pieces import ChessKing, ChessRook, ChessPawn
 from models.send_data_manager import SendDataManager
+from server.models.game.hash_board import hash_board
 import copy
 
 class Game:
@@ -126,43 +127,8 @@ class Game:
         piece.on_captured(capturing_team)
         self.current_player.add_captured_piece(piece)
 
-    @staticmethod
-    def hash_board(pieces, size, black_captured_pieces, white_captured_pieces):
-        """
-        Generates a unique hash string representing the board state.
-        """
-        def serialize_board_state():
-            state = []
-            for y in range(1, size + 1):
-                for x in range(1, size + 1):
-                    piece: Piece = pieces.get((x, y))
-                    if piece:
-                        promote_state = "P" if piece.is_promoted else "N"
-                        state.append(f"{x}_{y}_{piece.name}_{piece.team}_{promote_state}")
-                    else:
-                        state.append(f"{x}_{y}_._._.")
-            return state
-
-        def serialize_captured_pieces(captured_pieces: list[Piece]):
-            counts = {}
-            for piece in captured_pieces:
-                key = f"{piece.name}_{piece.team}"
-                counts[key] = counts.get(key, 0) + 1
-            return [f"{key}_x{count}" for key, count in counts.items()]
-
-        # Serialize board state
-        data = serialize_board_state()
-        data.append("/")
-
-        # Serialize captured pieces
-        data.extend(serialize_captured_pieces(black_captured_pieces))
-        data.append("/")
-        data.extend(serialize_captured_pieces(white_captured_pieces))
-
-        return ",".join(data)
-
     def add_history(self):
-        board_hash = Game.hash_board(
+        board_hash = hash_board(
             self.board.pieces, 
             self.board.size, 
             self.black.captured_pieces, 

@@ -1,5 +1,5 @@
-from models.piece import Piece
-from models.board import Board
+from models.piece.piece import Piece
+from models.game.board import Board
 
 class Player:
     def __init__(self, player_id: str, team: str):
@@ -21,7 +21,7 @@ class Player:
             self.__team = value
     
     @property
-    def captured_pieces(self):
+    def captured_pieces(self) -> list[Piece]:
         return list(self.__captured_pieces)
     
     @property

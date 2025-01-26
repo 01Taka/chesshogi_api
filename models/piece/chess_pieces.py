@@ -1,4 +1,4 @@
-from models.piece import Piece
+from models.piece.piece import Piece
 
 class ChessPiece(Piece):    
     def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=True, is_banned_promote=True, is_promoted=False, immobile_row=None, last_move=None, is_rearranged=False):

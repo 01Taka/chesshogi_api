@@ -1,4 +1,4 @@
-from models.pieces_info import PIECE_CLASSES
+from models.piece.pieces_info import PIECE_CLASSES
 
 SHOGI_BOARD_SIZE = 9
 CHESS_BOARD_SIZE = 8

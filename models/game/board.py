@@ -1,6 +1,6 @@
 from models.piece import Piece
-from models.board_initializer import BoardInitializer
-from models.pieces_info import PIECE_CLASSES, PIECE_VALUES, PROM_PIECE_VALUES
+from models.game.board_initializer import BoardInitializer
+from models.piece.pieces_info import PIECE_CLASSES
 import json
 
 class Board:
@@ -116,25 +116,3 @@ class Board:
         board.__pieces = pieces
         return board
 
-
-    def evaluate_board(self):
-        black_score = 0
-        white_score = 0
-        for piece in self.pieces.values():
-            piece_value = PROM_PIECE_VALUES[piece.name] if piece.is_promoted else PIECE_VALUES[piece.name] 
-            if piece.team == "black":
-                black_score += piece_value
-                white_score -= piece_value
-            else:
-                black_score -= piece_value
-                white_score += piece_value
-        return black_score, white_score
-                
-
-    def generate_moves(self, maximizing_player):
-        moves = []
-        for piece in self.pieces.values():
-            if piece.team == maximizing_player:
-                possible_moves = piece.get_legal_moves(self.pieces)
-                moves.extend(possible_moves)
-        return moves
