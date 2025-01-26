@@ -11,20 +11,18 @@ class ChessKing(ChessPiece):
         return Piece.EVERY_DIRECTION(), None
 
     @staticmethod
-    def get_chess_king_relative_legal_moves(position, team, board_size, last_move, pieces):
+    def get_chess_king_relative_legal_moves(position, team, board_size, is_first_move, pieces):
         """King's legal moves: one square in any direction, plus expanded castling"""
         moves = Piece.EVERY_DIRECTION()  # 通常の動き
-        if not last_move:
+        if is_first_move:
             castling_moves = ChessKing.castling_moves(position, team, board_size, pieces)  # キャスリングの候補を取得
             moves.extend(castling_moves)
         return moves, None
     
     @classmethod
-    def get_legal_moves_static(cls, position, team, is_promoted, board_size, pieces: dict, last_move="empty", _="empty"):
+    def get_legal_moves_static(cls, position, team, is_promoted, board_size, pieces: dict, is_first_move=False, is_rearranged=False):
         positions, directions = ChessKing.get_relative_legal_moves(is_promoted)
-
-        if last_move != "empty":
-            positions, directions = ChessKing.get_chess_king_relative_legal_moves(position, team, board_size, last_move, pieces)
+        positions, directions = ChessKing.get_chess_king_relative_legal_moves(position, team, board_size, is_first_move, pieces)
         
         return Piece.get_valid_moves(position, team, board_size, pieces, positions, directions)
 
@@ -66,10 +64,14 @@ class ChessKing(ChessPiece):
         return False
     
     @staticmethod
-    def is_castling_move(current_position, target_position, team, board_size, pieces):
+    def is_castling_move(current_position, target_position, team, board_size, pieces: dict):
         """Check if the move is a castling move"""
-        castling_moves = ChessKing.castling_moves(current_position, team, board_size, pieces)
-        return target_position in Piece.get_valid_moves(current_position, team, board_size, pieces, castling_moves)
+        if not pieces.get(target_position) and Piece.is_within_board(board_size, target_position):
+            castling_moves = ChessKing.castling_moves(target_position, team, board_size, pieces) 
+            return target_position in ((current_position[0] + x, current_position[1] + y) for x, y in castling_moves)
+        else:
+            return False
+    
     
     @staticmethod
     def get_castling_partner(current_position, target_position, team, board_size, pieces: dict[(int, int), Piece]):
@@ -128,7 +130,7 @@ class ChessRook(ChessPiece):
                 return False
             return True
     
-    def get_after_castling_position(self, king_position: tuple, pieces: dict):
+    def get_after_castling_position(self, king_position: tuple):
         dx = king_position[0] - self.position[0]
         dy = king_position[1] - self.position[1]
         normalized_direction = max(min(dx, 1), -1), max(min(dy, 1), -1)
@@ -136,8 +138,8 @@ class ChessRook(ChessPiece):
         if dx != 0 and dy != 0:
             return
         
-        if self.is_vacant_between(normalized_direction, max(abs(dx), abs(dy)), pieces):
-            position = (king_position[0] - normalized_direction[0], king_position[1] - normalized_direction[1]) # キングのもとの位置の一つとなり
+        # if self.is_vacant_between(normalized_direction, max(abs(dx), abs(dy)), pieces):
+        position = (king_position[0] - normalized_direction[0], king_position[1] - normalized_direction[1]) # キングのもとの位置の一つとなり
 
         return position
 
@@ -165,7 +167,7 @@ class ChessPawn(ChessPiece):
         return [(0, 1)], None
     
     @staticmethod
-    def get_chess_pawn_relative_legal_moves(is_promoted, is_rearranged, position, team, pieces, last_move):
+    def get_chess_pawn_relative_legal_moves(is_promoted, is_rearranged, position, team, pieces, is_first_move):
         """Pawn's legal moves: forward 1 square, optionally 2 squares on first move, diagonal capture, and en passant"""
         if is_promoted:
             positions = None if not is_rearranged else Piece.EVERY_DIRECTION()
@@ -179,7 +181,7 @@ class ChessPawn(ChessPiece):
             # Forward move
             if not pieces.get((x, y + direction)):
                 moves.append(((0, 1)))
-                if not last_move and not pieces.get((x, y + 2 * direction)):
+                if is_first_move and not pieces.get((x, y + 2 * direction)):
                     moves.append((0, 2))
 
             # Diagonal captures and en passant
@@ -193,11 +195,9 @@ class ChessPawn(ChessPiece):
             return moves, None
         
     @classmethod
-    def get_legal_moves_static(cls, position, team, is_promoted, board_size, pieces: dict, last_move="empty", is_rearranged="empty"):
+    def get_legal_moves_static(cls, position, team, is_promoted, board_size, pieces: dict, is_first_move=False, is_rearranged=False):
         positions, directions = ChessPawn.get_relative_legal_moves(is_promoted)
-
-        if last_move != "empty" and is_rearranged != "empty":
-            positions, directions = ChessPawn.get_chess_pawn_relative_legal_moves(is_promoted, is_rearranged, position, team, pieces, last_move)
+        positions, directions = ChessPawn.get_chess_pawn_relative_legal_moves(is_promoted, is_rearranged, position, team, pieces, is_first_move)
         return Piece.get_valid_moves(position, team, board_size, pieces, positions, directions)
 
     @staticmethod
@@ -214,14 +214,14 @@ class ChessPillar(ChessPiece):
     @staticmethod
     def get_relative_legal_moves(_):
         """Bishop's legal moves: any number of squares diagonally"""
-        positions = [[1, 0], [2, 0], [0, 1], [0, 2], [-1, 0], [-2, 0], [0, -1], [0, -2]],
+        positions = [[1, 0], [2, 0], [0, 1], [0, 2], [-1, 0], [-2, 0], [0, -1], [0, -2]]
         return positions, None
 
 class ChessWisp(ChessPiece):
     @staticmethod
     def get_relative_legal_moves(_):
         """Bishop's legal moves: any number of squares diagonally"""
-        positions = [[1, 1], [2, 2], [-1, 1], [-2, 2], [-1, -1], [-2, -2], [1, -1], [2, -2]],
+        positions = [[1, 1], [2, 2], [-1, 1], [-2, 2], [-1, -1], [-2, -2], [1, -1], [2, -2]]
         return positions, None
 
 class ChessLance(ChessPiece):

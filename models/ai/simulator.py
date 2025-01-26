@@ -1,99 +1,103 @@
-from models.game import Game
+from models.piece.pieces_info import PIECE_VALUES, PROM_PIECE_VALUES
+from models.piece.piece import Piece
+from models.game.board import Board
+from models.game.player import Player
+from models.game.action_manager import ActionManager
 
 class Simulator:
-    def __init__(self, game: Game):
+    """
+    Simulator class for evaluating and simulating game actions.
+    """
+    @staticmethod
+    def simulate_action(player: Player, board: Board, action: dict) -> float:
         """
-        シミュレータを初期化します。
+        Simulates the specified action and returns the evaluation score.
 
         Args:
-            game (Game): シミュレーション対象のゲームインスタンス
-        """
-        self.game = game
+            player (Player): The player performing the action
+            board (Board): The current board state
+            action (dict): A dictionary containing action details
 
-    def simulate_action(self, target_piece_id, promote, action_type, x, y):
+        Returns:
+            float: Evaluation score after the action is performed
         """
-        指定されたアクションを仮想的に実行し、評価値を返す。
+        player = player.copy()
+        board = board.copy()
+
+        ActionManager.action(
+            player,
+            board,
+            action['target_piece_id'],
+            action['promote'],
+            action['action_type'],
+            action['x'],
+            action['y'],
+        )
+
+        # Evaluate the game state after performing the action
+        return Simulator.evaluate_state(player.team, board.pieces.values())
+
+    @staticmethod
+    def evaluate_state(team: str, pieces: list[Piece]) -> float:
+        """
+        Evaluates the current game state and returns a score.
 
         Args:
-            target_piece_id (int): 対象の駒ID
-            promote (bool): プロモーションの有無
-            action_type (str): "move" または "place"
-            x (int): 移動先のX座標
-            y (int): 移動先のY座標
+            team (str): The team to evaluate the score for ("white" or "black")
+            pieces (list[Piece]): List of pieces on the board
 
         Returns:
-            float: アクション後のゲーム状態の評価値
-        """
-        # 現在のゲーム状態を保存
-        backup_state = self.game.to_dict()
-
-        try:
-            # 仮想的にアクションを実行
-            self.game.action(target_piece_id, promote, action_type, x, y)
-            # 新しいゲーム状態を評価
-            score = self.evaluate_state()
-        finally:
-            # ゲーム状態を元に戻す
-            restored_game = Game.from_dict(backup_state)
-            self.game.__dict__.update(restored_game.__dict__)
-
-        return score
-
-    def evaluate_state(self):
-        """
-        現在のゲーム状態を評価してスコアを返す。
-
-        Returns:
-            float: ゲーム状態の評価値
+            float: The evaluation score
         """
         score = 0
-        for piece in self.game.board.pieces.values():
-            if piece.team == self.game.current_player.team:
-                score += piece.value  # 駒の価値を加算
-            else:
-                score -= piece.value  # 敵駒の価値を減算
-
-        # その他の評価ロジック（例: キングの安全性、駒の位置など）を追加
+        for piece in pieces:
+            piece_value = (PROM_PIECE_VALUES[piece.name] if piece.is_promoted 
+                           else PIECE_VALUES[piece.name])
+            score += piece_value if piece.team == team else -piece_value
         return score
 
-    def simulate_possible_actions(self):
+    @staticmethod
+    def generate_possible_actions(player: Player, board: Board) -> list[dict]:
         """
-        現在のプレイヤーが可能なすべてのアクションをシミュレーションし、
-        アクションごとの評価値を返す。
+        Generates all possible actions for the current player.
+
+        Args:
+            player (Player): The current player
+            board (Board): The current board state
 
         Returns:
-            list[tuple[dict, float]]: アクションとその評価値のリスト
+            list[dict]: A list of possible actions
         """
-        possible_moves = []
-        for piece in self.game.current_player.captured_pieces:
-            legal_moves = piece.get_legal_moves(self.game.board.pieces)
-            for move in legal_moves:
-                possible_moves.append({
-                    "piece_id": piece.id,
-                    "promote": False,
-                    "action_type": "move",
-                    "x": move[0],
-                    "y": move[1]
-                })
-                # プロモーションが可能な場合も追加
-                if piece.can_promote(move):
-                    possible_moves.append({
-                        "piece_id": piece.piece_id,
-                        "promote": True,
-                        "action_type": "move",
-                        "x": move[0],
-                        "y": move[1]
-                    })
+        actions = []
+        for piece in board.pieces.values():
+            if piece.team != player.team:
+                continue
 
-        evaluations = []
-        for action in possible_moves:
-            score = self.simulate_action(
-                action["piece_id"],
-                action["promote"],
-                action["action_type"],
-                action["x"],
-                action["y"]
-            )
-            evaluations.append((action, score))
+            for move in piece.get_legal_moves(board.pieces):
+                actions.append(Simulator._create_action(piece.piece_id, move, False, "move"))
+                if piece.can_promote(move[1]):
+                    actions.append(Simulator._create_action(piece.piece_id, move, True, "move"))
 
-        return evaluations
+        return actions
+
+    @staticmethod
+    def _create_action(piece_id: int, move: tuple[int, int], promote: bool, action_type: str) -> dict:
+        """
+        Creates an action dictionary.
+
+        Args:
+            piece_id (int): The piece's ID
+            move (tuple[int, int]): The target move coordinates
+            promote (bool): Whether the promotion occurs
+            action_type (str): The type of action ("move" or "place")
+
+        Returns:
+            dict: A dictionary representing the action
+        """
+        return {
+            "target_piece_id": piece_id,
+            "promote": promote,
+            "action_type": action_type,
+            "x": move[0],
+            "y": move[1],
+        }

@@ -1,17 +1,34 @@
-from models.piece import Piece
+from models.piece.piece import Piece
 from models.game.board_initializer import BoardInitializer
 from models.piece.pieces_info import PIECE_CLASSES
 import json
+import copy
 
 class Board:
-    def __init__(self, board_type: str, black_board: str, white_board: str, black_placeable: bool, white_placable: bool):
-        size, pieces = BoardInitializer.get_board(board_type, black_board, white_board, black_placeable, white_placable)
+    def __init__(self, board_type: str, black_board: str, white_board: str, black_placeable: bool, white_placable: bool, size=None, pieces=None):
+        if size is None or pieces is None:
+            size, pieces = BoardInitializer.get_board(board_type, black_board, white_board, black_placeable, white_placable)
 
         self.__board_type = board_type
         self.__black_board = black_board
         self.__white_board = white_board
         self.__size = size
         self.__pieces = pieces
+        
+        self.__black_placeable = black_placeable
+        self.__white_placable = white_placable
+
+    def copy(self):
+        copied_pieces = copy.deepcopy(self.pieces)
+        return Board(
+            self.__board_type,
+            self.__black_board,
+            self.__white_board,
+            self.__black_placeable,
+            self.__white_placable,
+            self.__size,
+            copied_pieces
+        )
 
     @property
     def board_type(self):

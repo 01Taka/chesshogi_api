@@ -146,7 +146,10 @@ class Piece:
         return not self.is_banned_promote and is_valid_row
 
     def get_legal_moves(self, pieces: dict):
-        return self.get_legal_moves_static(self.position, self.team, self.is_promoted, self.board_size, pieces, self.last_move, self.is_rearranged)
+        if self.position:
+            return self.get_legal_moves_static(self.position, self.team, self.is_promoted, self.board_size, pieces, not self.last_move, self.is_rearranged)
+        else:
+            return []
 
     # ---- Static Methods ----
     @staticmethod
@@ -157,6 +160,11 @@ class Piece:
     @staticmethod
     def is_behind_line(team, board_size, y, line):
         return (team == 'white' and y >= line) or (team == 'black' and y <= board_size - line - 1)
+    
+    @staticmethod
+    def can_promote_static(team, from_y, to_y, board_size, promote_line):
+        """Check if the piece can be promoted."""
+        return promote_line and any(not Piece.is_behind_line(team, board_size, y, promote_line) for y in [from_y, to_y])
 
     @staticmethod
     def adjust_position_for_team(position, team):
@@ -202,7 +210,7 @@ class Piece:
     
     # ---- Class Methods ----
     @classmethod
-    def get_legal_moves_static(cls, position, team, is_promoted, board_size, pieces: dict, last_move=None, is_rearranged=False):
+    def get_legal_moves_static(cls, position, team, is_promoted, board_size, pieces: dict, is_first_move=False, is_rearranged=False):
         positions, directions = cls.get_relative_legal_moves(is_promoted)
         return Piece.get_valid_moves(position, team, board_size, pieces, positions, directions)
 

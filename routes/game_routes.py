@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify, json
-from models.game import Game
-from models.board import Board
-from server.models.game.player import Player
+from models.game.game import Game
+from models.game.board import Board
+from models.game.player import Player
+from models.ai.ai_player import AIPlayer
 from models.redis_client import get_redis_client
 
 game_routes = Blueprint("game_routes", __name__)
@@ -73,7 +74,7 @@ def perform_action():
         # アクションを実行
         # 仮想的に `Game` クラスのインスタンスでアクションを処理
         game = Game.from_dict(game_cls_dict)
-        game.action(
+        game.perform_action(
             target_piece_id=data["targetPieceId"],
             action_type=data["actionType"],
             promote=data["promote"],
@@ -81,12 +82,20 @@ def perform_action():
             y=data["y"],
         )
 
-        # 状態を更新
-        get_redis_client().set(f"game_cls_dict:{user_id}", json.dumps(game.to_dict()), ex=TTL_IN_SECONDS)
-        if data:
-            get_redis_client().expire(f"game_cls_dict:{user_id}", TTL_IN_SECONDS)
-
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
-    return jsonify(game.get_game_data_dict()), 200
+    # AIの行動
+    ai_action = None
+    if data["isAIResponds"]:
+        ai_action = AIPlayer.take_action(game)
+
+    # 状態を更新
+    get_redis_client().set(f"game_cls_dict:{user_id}", json.dumps(game.to_dict()), ex=TTL_IN_SECONDS)
+    if data:
+        get_redis_client().expire(f"game_cls_dict:{user_id}", TTL_IN_SECONDS)
+
+    return jsonify({
+        "aiAction": ai_action,
+        "gameState": game.get_game_data_dict()
+    }), 200

@@ -35,7 +35,7 @@ PIECE_CLASSES = {
 
 PIECE_VALUES = {
     # 将棋の駒
-    "ShogiKing": 0,        # 王将は負けに直結するため評価関数で特別扱い
+    "ShogiKing": 100000,        # 王将は負けに直結するため評価関数で特別扱い
     "ShogiPawn": 1,
     "ShogiLance": 5,
     "ShogiKnight": 6,
@@ -47,7 +47,7 @@ PIECE_VALUES = {
     "ShogiPhoenix": 27,    
 
     # チェスの駒
-    "ChessKing": 0,        # キングは負けに直結するため特別扱い
+    "ChessKing": 100000,        # キングは負けに直結するため特別扱い
     "ChessPawn": 3,
     "ChessKnight": 11,
     "ChessBishop": 11,
@@ -68,18 +68,100 @@ PROM_PIECE_VALUES = {
     "ShogiRook": 21,
     "ShogiJumper": 16,     
     # 成れない駒はそのまま
-    "ShogiKing": 0,        # 王将は昇格しない
+    "ShogiKing": 100000,        # 王将は昇格しない
+    "ShogiGold": 10,
     "ShogiPhoenix": 27,    
 
     # チェスの駒
     "ChessPawn": 23,        # ポーンの昇格先は通常クイーン
     "ChessLance": 11,      
     # 成れない駒はそのまま
-    "ChessKing": 0,        # キングは昇格しない
+    "ChessKing": 100000,        # キングは昇格しない
     "ChessKnight": 11,
     "ChessBishop": 11,
     "ChessRook": 14,
     "ChessQueen": 27,
     "ChessPillar": 10,     
     "ChessWisp": 9,       
+}
+
+POSITION_SCORES_SETTING = {
+    "ShogiKing": {
+        "row": -1,
+        "col": 0
+      },
+    "ShogiRook": {
+        "row": 1,
+        "col": 0.1
+    },
+    "ShogiBishop": {
+        "row": 1,
+        "col": 0
+    },
+    "ShogiGold": {
+        "row": 0.5,
+        "col": 0.2
+    },
+    "ShogiSilver": {
+        "row": 1.5,
+        "col": 0.5
+    },
+    "ShogiKnight": {
+        "row": 0.5,
+        "col": 0.2
+    },
+    "ShogiLance": {
+        "row": 0,
+        "col": 0
+    },
+    "ShogiPawn": {
+        "row": 1,
+        "col": 0
+    },
+    "ShogiJumper": {
+        "row": 1,
+        "col": 0.5
+    },
+    "ShogiPhoenix": {
+        "row": 0.5,
+        "col": 0.5
+    },
+
+    # チェスの駒
+    "ChessKing": {
+        "row": -1,
+        "col": 0
+    },
+    "ChessQueen": {
+        "row": 1,
+        "col": 0.3
+    },
+    "ChessRook": {
+        "row": 1,
+        "col": 0.5
+    },
+    "ChessBishop": {
+        "row": 1,
+        "col": 0
+    },
+    "ChessKnight": {
+        "row": 1,
+        "col": 0.5
+    },
+    "ChessPawn": {
+        "row": 1,
+        "col": 0
+    },
+    "ChessPillar": {
+        "row": 1,
+        "col": 0.2
+    },
+    "ChessWisp": {
+        "row": 1,
+        "col": 0.2
+    },
+    "ChessLance": {
+        "row": 0,
+        "col": 0
+    }
 }

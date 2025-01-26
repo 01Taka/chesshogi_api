@@ -1,11 +1,15 @@
 from models.piece.piece import Piece
 from models.game.board import Board
+import copy
 
 class Player:
-    def __init__(self, player_id: str, team: str):
+    def __init__(self, player_id: str, team: str, captured_pieces: list[Piece] = []):
         self.__player_id = player_id
         self.__team = team
-        self.__captured_pieces = []  # 持ち駒リスト
+        self.__captured_pieces = captured_pieces
+
+    def copy(self):
+        return Player(self.player_id, self.team, copy.deepcopy(self.__captured_pieces))
     
     @property
     def player_id(self):
