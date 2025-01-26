@@ -1,40 +1,8 @@
-from models.shogi_pieces import (
-    ShogiKing, ShogiRook, ShogiBishop, ShogiGold,
-    ShogiSilver, ShogiKnight, ShogiLance, ShogiPawn,
-    ShogiJumper, ShogiPhoenix
-)
-from models.chess_pieces import (
-    ChessKing, ChessQueen, ChessRook, ChessBishop,
-    ChessKnight, ChessPawn, ChessPillar, ChessWisp, ChessLance
-)
+from models.pieces_info import PIECE_CLASSES
 
 SHOGI_BOARD_SIZE = 9
 CHESS_BOARD_SIZE = 8
 
-PIECE_CLASSES = {
-    # 将棋の駒
-    "ShogiKing": ShogiKing,
-    "ShogiRook": ShogiRook,
-    "ShogiBishop": ShogiBishop,
-    "ShogiGold": ShogiGold,
-    "ShogiSilver": ShogiSilver,
-    "ShogiKnight": ShogiKnight,
-    "ShogiLance": ShogiLance,
-    "ShogiPawn": ShogiPawn,
-    "ShogiJumper": ShogiJumper,
-    "ShogiPhoenix": ShogiPhoenix,
-
-    # チェスの駒
-    "ChessKing": ChessKing,
-    "ChessQueen": ChessQueen,
-    "ChessRook": ChessRook,
-    "ChessBishop": ChessBishop,
-    "ChessKnight": ChessKnight,
-    "ChessPawn": ChessPawn,
-    "ChessPillar": ChessPillar,
-    "ChessWisp": ChessWisp,
-    "ChessLance": ChessLance
-}
 
 SHOGI_BOARD_POSITIONS = {
     "shogi": {

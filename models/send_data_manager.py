@@ -49,7 +49,7 @@ class SendDataManager:
     def get_legal_moves(pieces: dict[tuple[int, int], Piece]) -> dict:
         legals = {}
         for piece in pieces.values():
-            legals[piece.piece_id] = piece.legal_moves(pieces)
+            legals[piece.piece_id] = piece.get_legal_moves(pieces)
         return legals
 
     @staticmethod

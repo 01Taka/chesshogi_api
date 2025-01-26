@@ -5,56 +5,76 @@ class ChessPiece(Piece):
         super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
 
 class ChessKing(ChessPiece):
-    def legal_moves(self, pieces: dict):
+    @staticmethod
+    def get_relative_legal_moves(_):
         """King's legal moves: one square in any direction, plus expanded castling"""
-        moves = self.EVERY_DIRECTION.copy()  # 通常の動き
-        if not self.last_move:
-            castling_moves = self.castling_moves(pieces)  # キャスリングの候補を取得
-            moves.extend(castling_moves)
-        return self.get_valid_moves(pieces, positions=moves)
+        return Piece.EVERY_DIRECTION(), None
 
-    def castling_moves(self, pieces: dict):
+    @staticmethod
+    def get_chess_king_relative_legal_moves(position, team, board_size, last_move, pieces):
+        """King's legal moves: one square in any direction, plus expanded castling"""
+        moves = Piece.EVERY_DIRECTION()  # 通常の動き
+        if not last_move:
+            castling_moves = ChessKing.castling_moves(position, team, board_size, pieces)  # キャスリングの候補を取得
+            moves.extend(castling_moves)
+        return moves, None
+    
+    @classmethod
+    def get_legal_moves_static(cls, position, team, is_promoted, board_size, pieces: dict, last_move="empty", _="empty"):
+        positions, directions = ChessKing.get_relative_legal_moves(is_promoted)
+
+        if last_move != "empty":
+            positions, directions = ChessKing.get_chess_king_relative_legal_moves(position, team, board_size, last_move, pieces)
+        
+        return Piece.get_valid_moves(position, team, board_size, pieces, positions, directions)
+
+    @staticmethod
+    def castling_moves(position, team, board_size, pieces: dict):
         """Check for castling moves and return possible moves"""
         moves = []
-        for direction in self.UP_DOWN_LEFT_RIGHT:
-            if self.can_castle_in_direction(direction, pieces):
+        for direction in [(1, 0), (-1, 0)]:
+            if ChessKing.can_castle_in_direction(direction, position, team, board_size, pieces):
                 moves.append((2 * direction[0], 2 * direction[1]))
         return moves
 
-    def can_castle_in_direction(self, direction, pieces: dict):
+    @staticmethod
+    def can_castle_in_direction(direction, position, team, board_size, pieces: dict):
         """Check if castling is possible in a given direction"""
-        if self.is_under_attack(self.position, pieces):
+        if ChessKing.is_under_attack(position, pieces):
             return False
         
         dx, dy = direction
-        for i in range(1, self.board_size):
-            nx, ny = self.position[0] + dx * i, self.position[1] + dy * i
+        for i in range(1, board_size):
+            nx, ny = position[0] + dx * i, position[1] + dy * i
 
-            if not self.is_within_board((nx, ny)) or self.is_under_attack((nx, ny), pieces):
+            if not Piece.is_within_board(board_size, (nx, ny)) or ChessKing.is_under_attack((nx, ny), pieces):
                 return False
             
             rook = pieces.get((nx, ny))
             if rook:
-                if isinstance(rook, ChessRook) and not rook.last_move and rook.team == self.team:
+                if isinstance(rook, ChessRook) and not rook.last_move and rook.team == team:
                     return True
                 else:
                     return False
 
         return False
 
-    def is_under_attack(self, square, pieces):
+    @staticmethod
+    def is_under_attack(square, pieces):
         """Placeholder for checking if a square is under attack"""
         # TODO: Implement the actual logic
         return False
     
-    def is_castling_move(self, position, pieces):
+    @staticmethod
+    def is_castling_move(current_position, target_position, team, board_size, pieces):
         """Check if the move is a castling move"""
-        castling_moves = self.castling_moves(pieces)
-        return position in self.get_valid_moves(pieces, castling_moves)
+        castling_moves = ChessKing.castling_moves(current_position, team, board_size, pieces)
+        return target_position in Piece.get_valid_moves(current_position, team, board_size, pieces, castling_moves)
     
-    def get_castling_partner(self, position, pieces: dict[(int, int), Piece]):
+    @staticmethod
+    def get_castling_partner(current_position, target_position, team, board_size, pieces: dict[(int, int), Piece]):
         """
-        Get the rook involved in castling for the given castling move position.
+        Get the rook involved in castling for the given castling move target_position.
         
         Args:
             pieces (dict): Current board state.
@@ -63,19 +83,19 @@ class ChessKing(ChessPiece):
         Returns:
             ChessRook: The rook involved in castling, or None if no such rook exists.
         """
-        if not self.is_castling_move(position, pieces):
+        if not ChessKing.is_castling_move(current_position, target_position, team, board_size, pieces):
             return None
         
         # Determine direction of castling based on the target position
-        dx = position[0] - self.position[0]
+        dx = target_position[0] - current_position[0]
         direction = (1 if dx > 0 else -1, 0)  # Horizontal direction
         
         # Traverse along the direction to find the rook
-        nx, ny = self.position[0] + direction[0], self.position[1] + direction[1]
-        while self.is_within_board((nx, ny)):
+        nx, ny = current_position[0] + direction[0], current_position[1] + direction[1]
+        while Piece.is_within_board(board_size, (nx, ny)):
             piece = pieces.get((nx, ny))
             if piece:
-                if isinstance(piece, ChessRook) and piece.team == self.team and not piece.last_move:
+                if isinstance(piece, ChessRook) and piece.team == team and not piece.last_move:
                     return piece
                 else:
                     return None
@@ -86,16 +106,16 @@ class ChessKing(ChessPiece):
 
 
 class ChessQueen(ChessPiece):
-    def legal_moves(self, pieces: dict):
+    @staticmethod
+    def get_relative_legal_moves(_):
         """Queen's legal moves: any number of squares in all directions"""
-        directions = self.EVERY_DIRECTION
-        return self.get_valid_moves(pieces, directions=directions)
+        return None, Piece.EVERY_DIRECTION()
 
 class ChessRook(ChessPiece):
-    def legal_moves(self, pieces: dict):
+    @staticmethod
+    def get_relative_legal_moves(_):
         """Rook's legal moves: any number of squares vertically or horizontally"""
-        directions = self.UP_DOWN_LEFT_RIGHT
-        return self.get_valid_moves(pieces, directions=directions)
+        return None, Piece.UP_DOWN_LEFT_RIGHT()
 
     def is_vacant_between(self, direction, length, pieces: dict):
         dx, dy = max(min(direction[0], 1), -1), max(min(direction[1], 1), -1)
@@ -123,77 +143,94 @@ class ChessRook(ChessPiece):
 
 
 class ChessBishop(ChessPiece):
-    def legal_moves(self, pieces: dict):
+    @staticmethod
+    def get_relative_legal_moves(_):
         """Bishop's legal moves: any number of squares diagonally"""
-        directions = [(-1, -1), (1, -1), (-1, 1), (1, 1)]
-        return self.get_valid_moves(pieces, directions=directions)
+        return None, [(-1, -1), (1, -1), (-1, 1), (1, 1)]
 
 class ChessKnight(ChessPiece):
-    def legal_moves(self, pieces: dict):
+    @staticmethod
+    def get_relative_legal_moves(_):
         """Knight's legal moves: L-shaped moves"""
         directions = [(-2, -1), (-2, 1), (-1, -2), (-1, 2),
                       (1, -2), (1, 2), (2, -1), (2, 1)]
-        return self.get_valid_moves(pieces, positions=directions)
+        return directions, None
 
 class ChessPawn(ChessPiece):
     def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=True, is_banned_promote=False, is_promoted=False, immobile_row=1, last_move=None, is_rearranged=False):
         super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
 
-    def legal_moves(self, pieces: dict):
+    @staticmethod
+    def get_relative_legal_moves(_):
+        return [(0, 1)], None
+    
+    @staticmethod
+    def get_chess_pawn_relative_legal_moves(is_promoted, is_rearranged, position, team, pieces, last_move):
         """Pawn's legal moves: forward 1 square, optionally 2 squares on first move, diagonal capture, and en passant"""
-        if self.is_promoted:
-            positions = None if not self.is_rearranged else self.EVERY_DIRECTION
-            directions = self.EVERY_DIRECTION if not self.is_rearranged else []
-            return self.get_valid_moves(pieces, positions=positions, directions=directions)
+        if is_promoted:
+            positions = None if not is_rearranged else Piece.EVERY_DIRECTION()
+            directions = Piece.EVERY_DIRECTION() if not is_rearranged else []
+            return positions, directions
         else:
             moves = []
-            x, y = self.position
-            direction = 1 if self.team == 'black' else -1
+            x, y = position
+            direction = 1 if team == 'black' else -1
 
             # Forward move
             if not pieces.get((x, y + direction)):
-                moves.append((x, y + direction))
-                if not self.last_move and not pieces.get((x, y + 2 * direction)):
-                    moves.append((x, y + 2 * direction))
+                moves.append(((0, 1)))
+                if not last_move and not pieces.get((x, y + 2 * direction)):
+                    moves.append((0, 2))
 
             # Diagonal captures and en passant
             for dx in [-1, 1]:
                 target_pos = (x + dx, y + direction)
                 target = pieces.get(target_pos)
-                if target and target.team != self.team:
-                    moves.append(target_pos)
-                elif self.get_en_passant_target(target_pos, pieces):
-                    moves.append(target_pos)
+                if target and target.team != team:
+                    moves.append((dx, 1))
+                elif ChessPawn.get_en_passant_target(team, target_pos, pieces):
+                    moves.append((dx, 1))
+            return moves, None
+        
+    @classmethod
+    def get_legal_moves_static(cls, position, team, is_promoted, board_size, pieces: dict, last_move="empty", is_rearranged="empty"):
+        positions, directions = ChessPawn.get_relative_legal_moves(is_promoted)
 
-            return moves
+        if last_move != "empty" and is_rearranged != "empty":
+            positions, directions = ChessPawn.get_chess_pawn_relative_legal_moves(is_promoted, is_rearranged, position, team, pieces, last_move)
+        return Piece.get_valid_moves(position, team, board_size, pieces, positions, directions)
 
-    def get_en_passant_target(self, target_pos, pieces: dict):
+    @staticmethod
+    def get_en_passant_target(team, target_pos, pieces: dict):
         """Check if a given move is an en passant move."""
-        direction = 1 if self.team == 'black' else -1
+        direction = 1 if team == 'black' else -1
         target = pieces.get((target_pos[0], target_pos[1] - direction))  # ターゲットの位置
-        if target and isinstance(target, ChessPawn) and target.team != self.team:
+        if target and isinstance(target, ChessPawn) and target.team != team:
             if target.last_move and target.position and abs(target.last_move[1] - target.position[1]) == 2:
                 return target
         return None
 
 class ChessPillar(ChessPiece):
-    def legal_moves(self, pieces: dict):
+    @staticmethod
+    def get_relative_legal_moves(_):
         """Bishop's legal moves: any number of squares diagonally"""
-        directions = self.UP_DOWN_LEFT_RIGHT
-        return self.get_valid_moves(pieces, directions=directions, length=2)
+        positions = [[1, 0], [2, 0], [0, 1], [0, 2], [-1, 0], [-2, 0], [0, -1], [0, -2]],
+        return positions, None
 
 class ChessWisp(ChessPiece):
-    def legal_moves(self, pieces: dict):
+    @staticmethod
+    def get_relative_legal_moves(_):
         """Bishop's legal moves: any number of squares diagonally"""
-        directions = [(-1, -1), (1, -1), (-1, 1), (1, 1)]
-        return self.get_valid_moves(pieces, directions=directions, length=2)
+        positions = [[1, 1], [2, 2], [-1, 1], [-2, 2], [-1, -1], [-2, -2], [1, -1], [2, -2]],
+        return positions, None
 
 class ChessLance(ChessPiece):
     def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=True, is_banned_promote=False, is_promoted=False, immobile_row=1, last_move=None, is_rearranged=False):
         super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
 
-    def legal_moves(self, pieces: dict):
+    @staticmethod
+    def get_relative_legal_moves(is_promoted):
         """Bishop's legal moves: any number of squares diagonally"""
-        directions = [(0, 1)] if not self.is_promoted else None
-        positions = None if not self.is_promoted else self.EVERY_DIRECTION
-        return self.get_valid_moves(pieces, positions=positions, directions=directions)
+        directions = [(0, 1)] if not is_promoted else None
+        positions = None if not is_promoted else Piece.EVERY_DIRECTION()
+        return positions, directions

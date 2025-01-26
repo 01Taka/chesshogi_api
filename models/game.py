@@ -89,12 +89,12 @@ class Game:
         
     def special_processing(self, new_position, prev_piece, prev_pieces):
         if isinstance(prev_piece, ChessKing):
-            rook = prev_piece.get_castling_partner(new_position, prev_pieces)
+            rook = ChessKing.get_castling_partner(prev_piece.position, new_position, prev_piece.team, self.board.size, prev_pieces)
             if rook and isinstance(rook, ChessRook):
                 position = rook.get_after_castling_position(prev_piece.position, prev_pieces)
                 self.move_piece(rook, position, prev_pieces)
         elif isinstance(prev_piece, ChessPawn):
-            pawn = prev_piece.get_en_passant_target(new_position, prev_pieces)
+            pawn = ChessPawn.get_en_passant_target(prev_piece.team, new_position, prev_pieces)
             if pawn and isinstance(pawn, ChessPawn):
                 self.capture_piece(pawn, prev_piece.team)
 
@@ -103,7 +103,7 @@ class Game:
             pieces = self.board.pieces
         
         """Moves a piece on the board."""
-        if piece.position and new_position in piece.legal_moves(pieces):
+        if piece.position and new_position in piece.get_legal_moves(pieces):
             prev_pieces =  pieces
             prev_piece = copy.deepcopy(piece)
 
