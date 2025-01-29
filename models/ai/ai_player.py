@@ -1,5 +1,4 @@
 from models.ai.light import LightBoard, LightPlayer
-from models.game.game import Game
 from models.piece.piece import Piece
 from models.piece.pieces_info import PIECE_CLASSES, PIECE_VALUES, POSITION_SCORES_SETTING
 import random
@@ -10,7 +9,7 @@ class AIPlayer:
     PROMOTE_LINE = 3
 
     @staticmethod
-    def take_action(game: Game, depth: int=3):
+    def take_action(game, depth: int=3):
         try:
             white_player = LightPlayer(game.white)
             black_player = LightPlayer(game.black)

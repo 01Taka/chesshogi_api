@@ -3,7 +3,6 @@ from models.game.player import Player
 from models.send_data_manager import SendDataManager
 from models.game.hash_board import hash_board
 from models.game.action_manager import ActionManager  # Import ActionManager
-import copy
 
 class Game:
     REPEAT_LIMIT = 4
