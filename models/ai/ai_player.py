@@ -14,7 +14,7 @@ class AIPlayer:
         try:
             white_player = LightPlayer(game.white)
             black_player = LightPlayer(game.black)
-            board = LightBoard(game.board, white_player, black_player)
+            board = LightBoard(game, white_player, black_player)
 
             # AIによる最適なアクションを決定
             if depth > 0:
