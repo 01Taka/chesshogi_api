@@ -43,11 +43,15 @@ class ShogiPawn(ShogiPiece):
         return directions, None
     
     @staticmethod
-    def has_pawn_in_column(team, x, pieces):
-        return any(isinstance(piece, ShogiPawn) and piece.team == team and not piece.is_promoted and piece.position[0] == x for piece in pieces.values())
+    def has_pawn_in_column(team, x, pieces: dict):
+        return any(piece.name == "ShogiPawn" and piece.team == team and not piece.is_promoted and pos[0] == x for pos, piece in pieces.items())
 
     def can_place(self, position, pieces):
         return super().can_place(position, pieces) and not ShogiPawn.has_pawn_in_column(self.team, position[0], pieces)
+    
+    @classmethod
+    def can_place_static(cls, position, team, board_size, pieces, immobile_row=None):
+        return super().can_place_static(position, team, board_size, pieces, immobile_row) and not ShogiPawn.has_pawn_in_column(team, position[0], pieces)
 
 class ShogiLance(ShogiPiece):
     def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row=1, last_move=None, is_rearranged=False):

@@ -88,7 +88,7 @@ def perform_action():
     # AIの行動
     ai_action = None
     if data["isAIResponds"]:
-        ai_action = AIPlayer.take_action(game)
+        ai_action = AIPlayer.take_action(game, data["depth"])
 
     # 状態を更新
     get_redis_client().set(f"game_cls_dict:{user_id}", json.dumps(game.to_dict()), ex=TTL_IN_SECONDS)

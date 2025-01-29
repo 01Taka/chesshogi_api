@@ -38,6 +38,9 @@ class Player:
 
     def get_captured_piece_by_id(self, piece_id):
         return next((piece for piece in self.__captured_pieces if piece.piece_id == piece_id), None)
+    
+    def get_captured_piece_by_name(self, name):
+        return next((piece for piece in self.__captured_pieces if piece.name == name), None)
 
     def on_place_piece(self, piece: Piece):
         self.__captured_pieces.remove(piece)

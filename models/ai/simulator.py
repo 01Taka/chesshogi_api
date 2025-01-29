@@ -73,7 +73,7 @@ class Simulator:
             if piece.team != player.team:
                 continue
 
-            for move in piece.get_legal_moves(board.pieces):
+            for move, _ in piece.get_legal_moves(board.pieces):
                 actions.append(Simulator._create_action(piece.piece_id, move, False, "move"))
                 if piece.can_promote(move[1]):
                     actions.append(Simulator._create_action(piece.piece_id, move, True, "move"))

@@ -46,11 +46,12 @@ class SendDataManager:
         }
 
     @staticmethod
-    def get_legal_moves(pieces: dict[tuple[int, int], Piece]) -> dict:
+    def get_legal_moves(pieces: dict[tuple[int, int], Piece]):
         legals = {}
+        ally_blocks = {}
         for piece in pieces.values():
-            legals[piece.piece_id] = piece.get_legal_moves(pieces)
-        return legals
+            legals[piece.piece_id], ally_blocks[piece.piece_id] = piece.get_legal_moves(pieces)
+        return legals, ally_blocks
 
     @staticmethod
     def get_legal_places(captured_pieces: list[Piece], pieces: dict[tuple[int, int], Piece], size: int) -> dict:
@@ -66,13 +67,15 @@ class SendDataManager:
 
     @staticmethod
     def create_legal_actions(pieces: dict[tuple[int, int], Piece], captured_pieces: list[Piece], size: int) -> dict:
-        legal_moves = SendDataManager.get_legal_moves(pieces)
+        legal_moves, ally_blocks = SendDataManager.get_legal_moves(pieces)
         legal_places = SendDataManager.get_legal_places(captured_pieces, pieces, size)
         actions = {}
-        for piece_id in [piece.piece_id for piece in [*pieces.values(), *captured_pieces]]:
-            actions[piece_id] = {
-                "moves": legal_moves.get(piece_id, []),
-                "places": legal_places.get(piece_id, [])
+        for piece in [*pieces.values(), *captured_pieces]:
+            actions[piece.piece_id] = {
+                "team": piece.team,
+                "allyBlocks": ally_blocks.get(piece.piece_id, []),
+                "moves": legal_moves.get(piece.piece_id, []),
+                "places": legal_places.get(piece.piece_id, [])
             }
         return actions
 

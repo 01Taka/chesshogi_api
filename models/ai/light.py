@@ -53,6 +53,12 @@ class LightBoard:
         self.pieces: dict[tuple[int, int], LightPiece] = {
             pos: LightPiece(piece.name, piece.team, piece.is_promoted, not piece.last_move, piece.is_rearranged) for pos, piece in board.pieces.items()
         }
+        self.immobile_rows: dict[str, int] = {
+            piece.name: piece.immobile_row for piece in board.pieces.values() if piece.immobile_row
+        }
+        self.placeable_state: dict[str, bool] = {
+            piece.name: not piece.is_banned_place for piece in board.pieces.values()
+        }
         self.board_size = board.size
         self.white_player = white_player
         self.black_player = black_player

@@ -2,6 +2,7 @@ from models.ai.light import LightBoard, LightPlayer
 from models.game.game import Game
 from models.piece.piece import Piece
 from models.piece.pieces_info import PIECE_CLASSES, PIECE_VALUES, POSITION_SCORES_SETTING
+import random
 
 class AIPlayer:
     POSITIVE_TEAM = "white"
@@ -11,16 +12,34 @@ class AIPlayer:
     @staticmethod
     def take_action(game: Game, depth: int=3):
         try:
-            # AIによる最適なアクションを決定
             white_player = LightPlayer(game.white)
             black_player = LightPlayer(game.black)
             board = LightBoard(game.board, white_player, black_player)
-            action, _ = AIPlayer.find_best_move(board, game.current_player.team, depth)
 
+            # AIによる最適なアクションを決定
+            if depth > 0:
+                action, _ = AIPlayer.find_best_move(board, game.current_player.team, depth)
+            else:
+                action = AIPlayer.get_random_action(board, game.current_player.team)
+
+            if not action:
+                print("詰みです")
+                return None
+            
             # アクションの適用
-            target_piece = game.board.pieces.get(action["from"])
-            target_position = action.get("to")
-
+            action_type = action["type"]
+            if action_type == "move":
+                target_piece = game.board.pieces.get(action["from"])
+                target_position = action["to"]
+                from_pos = action["from"]
+                promote = action["promote"]
+            elif action_type == "place":
+                player = game.black if action["team"] == "black" else game.white
+                target_piece = player.get_captured_piece_by_name(action["name"])
+                target_position = action["position"]
+                from_pos = None
+                promote = False
+                
             if not target_piece or not target_position:
                 print("AIの動作が失敗しました: 有効なターゲットピースまたはターゲット位置が見つかりません")
                 return None
@@ -28,23 +47,27 @@ class AIPlayer:
             # ゲームアクションを実行
             game.perform_action(
                 target_piece.piece_id, 
-                action["promote"], 
-                "move", 
+                promote, 
+                action_type, 
                 target_position[0], 
                 target_position[1]
             )
 
             return {
                 "pieceId": target_piece.piece_id,
-                "from": action["from"],
-                "to": action["to"],
-                "promote": action["promote"],
+                "from": from_pos,
+                "to": target_position,
+                "promote": promote,
             }
 
         except ValueError as e:
             print(f"AIアクションの実行中にエラーが発生しました: {e}")
             return None
-
+        
+    @staticmethod
+    def get_random_action(board, team):
+        moves = AIPlayer.get_possible_moves(board, team, 0)
+        return random.choice(moves)
 
     @staticmethod
     def get_position_scores(name, position, team, board_size, rate=1):
@@ -79,7 +102,7 @@ class AIPlayer:
         # Evaluate on-board pieces
         for position, piece in board.pieces.items():
             score += piece.value if piece.team == AIPlayer.POSITIVE_TEAM else -piece.value
-            score += AIPlayer.get_position_scores(piece.name, position, piece.team, board.board_size)
+            score += AIPlayer.get_position_scores(piece.name, position, piece.team, board.board_size, 0.3)
 
         # Evaluate captured pieces
         for team, multiplier in [(AIPlayer.POSITIVE_TEAM, 1), (AIPlayer.NEGATIVE_TEAM, -1)]:
@@ -90,36 +113,117 @@ class AIPlayer:
         return score
 
     @staticmethod
-    def get_possible_moves(board: LightBoard, team: str):
+    def get_move_data(board: LightBoard, team):
+        """
+        Collects all possible moves for the given team and tracks enemy moves.
+        
+        Args:
+            board (LightBoard): The current board state.
+            team (str): The team to collect moves for.
+        
+        Returns:
+            tuple: (possible_moves, enemy_moves, king_pos)
+        """
+        king_pos = None
+        possible_moves = []
+        enemy_moves = []
+
+        for from_pos, piece in board.pieces.items():
+            PieceClass: Piece = PIECE_CLASSES[piece.name]
+            legal_moves, ally_blocks = PieceClass.get_legal_moves_static(
+                from_pos, piece.team, piece.is_promoted, board.board_size, 
+                board.pieces, piece.is_first_move, piece.is_rearranged
+            )
+
+            if piece.team == team:
+                if piece.name in {"ShogiKing", "ChessKing"}:
+                    king_pos = from_pos
+                
+                possible_moves.extend(
+                    {"type": "move", "name": piece.name, "from": from_pos, "to": to_pos, "promote": promote}
+                    for to_pos in legal_moves
+                    for promote in ([False, True] if PieceClass.can_promote_static(piece.team, from_pos[1], to_pos[1], board.board_size, AIPlayer.PROMOTE_LINE) else [False])
+                )
+            else:
+                enemy_moves.append({
+                    "position": from_pos,
+                    "moves": [*legal_moves, *ally_blocks],
+                    "move_type": Piece.get_piece_move_type_by_name(piece.name)
+                })
+        
+        return possible_moves, enemy_moves, king_pos
+
+    @staticmethod
+    def get_legal_places(board: LightBoard, team):
+        """
+        Get all possible piece placement moves for the given team.
+
+        Args:
+            board (LightBoard): The current board state.
+            team (str): The team to get legal placements for.
+
+        Returns:
+            list[dict]: List of legal placement moves.
+        """
+        player = board.black_player if team == "black" else board.white_player
+        return [
+            {"type": "place", "team": team, "name": piece_name, "position": position}
+            for piece_name, remaining in player.captured_pieces.items() if remaining >= 1 and board.placeable_state[piece_name]
+            for position in PIECE_CLASSES[piece_name].get_legal_places_static(
+                team, board.board_size, board.pieces, board.immobile_rows.get(piece_name)
+            )
+        ]
+
+    @staticmethod
+    def get_possible_moves(board: LightBoard, team: str, depth: int):
         """
         Get all possible moves for the given team, including promotion moves.
 
         Args:
-            board (LightBoard): The current board state
-            team (str): The team for which to get possible moves
+            board (LightBoard): The current board state.
+            team (str): The team for which to get possible moves.
+            depth (int): Search depth (affects legal placements).
 
         Returns:
-            list[dict]: A list of possible moves in the format {"from": position, "to": position, "promote": bool}.
+            list[dict]: A list of possible moves.
         """
-        possible_moves = []
+        possible_moves, enemy_moves, king_pos = AIPlayer.get_move_data(board, team)
+        
+        if depth != 1:
+            possible_moves.extend(AIPlayer.get_legal_places(board, team))
 
-        for from_pos, piece in board.pieces.items():
-            if piece.team == team:
-                PieceClass: Piece = PIECE_CLASSES[piece.name]
-                legal_moves = PieceClass.get_legal_moves_static(
-                    from_pos, piece.team, piece.is_promoted, board.board_size, board.pieces, piece.is_first_move, piece.is_rearranged 
-                )
+        if not king_pos:
+            return possible_moves  # No king found (shouldn't happen in a valid game)
 
-                for to_pos in legal_moves:
-                    # Add normal move
-                    possible_moves.append({"from": from_pos, "to": to_pos, "promote": False})
+        try:
+            king_movables, other_piece_movables, state = Piece.find_moves_to_escape_check(king_pos, enemy_moves, board.board_size)
+        except:
+                print("error")
+                import traceback
+                traceback.print_exc()
 
-                    # Check if promotion is possible
-                    if PieceClass.can_promote_static(piece.team, from_pos[1], to_pos[1], board.board_size, AIPlayer.PROMOTE_LINE):
-                        possible_moves.append({"from": from_pos, "to": to_pos, "promote": True})
+        if state == "checkmate":
+            print("checkmate")
+            return []
+        if state == "check":
+            possible_moves = [
+                move for move in possible_moves
+                if (move["name"] in {"ShogiKing", "ChessKing"} and move["type"] == "move" and move["to"] in king_movables) 
+                or (move["type"] == "move" and move["to"] in other_piece_movables)
+                or (move["type"] == "place" and move["position"] in other_piece_movables)
+            ]
 
         return possible_moves
 
+    @staticmethod
+    def perform_move(move, board: LightBoard, maximizing_team):
+        if move["type"] == "move":
+            board.move(maximizing_team, move["from"], move["to"], promote=move["promote"])
+        elif move["type"] == "place":
+            board.place(move["team"], move["name"], move["position"])
+        else:
+            raise ValueError("行動タイプには move か place を指定してください。", move["type"])
+            
     @staticmethod
     def find_best_move(board: LightBoard, maximizing_team: str, depth: int, alpha: float = float('-inf'), beta: float = float('inf')) -> tuple[dict, int]:
         """
@@ -141,11 +245,12 @@ class AIPlayer:
         best_move = None
         if maximizing_team == AIPlayer.POSITIVE_TEAM:
             best_score = float('-inf')
-            possible_moves = AIPlayer.get_possible_moves(board, maximizing_team)
+            possible_moves = AIPlayer.get_possible_moves(board, maximizing_team, depth)
 
             for move in possible_moves:
                 # Perform the move with optional promotion
-                board.move(maximizing_team, move["from"], move["to"], promote=move["promote"])
+                AIPlayer.perform_move(move, board, maximizing_team)
+
                 _, score = AIPlayer.find_best_move(board, AIPlayer.NEGATIVE_TEAM, depth - 1, alpha, beta)
                 board.undo_action()
 
@@ -160,11 +265,12 @@ class AIPlayer:
 
         else:
             best_score = float('inf')
-            possible_moves = AIPlayer.get_possible_moves(board, maximizing_team)
+            possible_moves = AIPlayer.get_possible_moves(board, maximizing_team, depth)
 
             for move in possible_moves:
                 # Perform the move with optional promotion
-                board.move(maximizing_team, move["from"], move["to"], promote=move["promote"])
+                AIPlayer.perform_move(move, board, maximizing_team)
+
                 _, score = AIPlayer.find_best_move(board, AIPlayer.POSITIVE_TEAM, depth - 1, alpha, beta)
                 board.undo_action()
 
