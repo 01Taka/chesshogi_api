@@ -1,6 +1,7 @@
 from models.piece.piece import Piece
 from models.game.board_initializer import BoardInitializer
 from models.piece.pieces_info import PIECE_CLASSES
+from models.type import Pieces
 import json
 import copy
 
@@ -54,13 +55,13 @@ class Board:
         if not self.get_piece(position):  
             self.__pieces[position] = piece
 
-    def on_move_piece(self, piece: Piece, prev_position, new_position):
-        captured_piece: Piece = self.get_piece(new_position)
+    def on_move_piece(self, piece: Piece, from_position, to_position):
+        captured_piece: Piece = self.get_piece(to_position)
         if captured_piece:
-            self.on_capture_piece(captured_piece.position)
+            self.on_capture_piece(from_position)
 
-        self.__pieces.pop(tuple(prev_position), None)
-        self.__pieces[new_position] = piece
+        self.__pieces.pop(tuple(from_position), None)
+        self.__pieces[to_position] = piece
     
     def on_capture_piece(self, position):
         self.__pieces.pop(position, None)
@@ -78,7 +79,9 @@ class Board:
         """
         return next((piece for piece in self.pieces.values() if piece.piece_id == piece_id), None)
 
-
+    @staticmethod
+    def get_piece_position_by_id(piece_id, pieces: Pieces):
+        return next((position for position, piece in pieces.items() if piece.piece_id == piece_id), None)
 
     # タプル[(int, int)]を文字列に変換してエンコードする関数
     @staticmethod
@@ -99,7 +102,6 @@ class Board:
 
         return PieceClass(
             piece_id=data["piece_id"],
-            position=data["position"],
             team=data["team"],
             board_size=data["board_size"],
             promote_line=data["promote_line"],
@@ -107,7 +109,7 @@ class Board:
             is_banned_promote=data["is_banned_promote"],
             is_promoted=data["is_promoted"],
             immobile_row=data["immobile_row"],
-            last_move=data["last_move"],
+            last_position=data["last_position"],
             is_rearranged=data["is_rearranged"]
         )
 

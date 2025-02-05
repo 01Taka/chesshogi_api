@@ -106,7 +106,6 @@ class BoardInitializer:
             for pos in piece_positions:
                 piece = piece_class(
                     piece_id=BoardInitializer.get_id(piece_id),
-                    position=pos,
                     team=team,
                     board_size=board_size,
                     promote_line=promote_line,

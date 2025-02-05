@@ -1,8 +1,10 @@
 from models.piece.piece import Piece
+from models.piece.chess_pieces import ChessPawn
+from models.type import PieceBase, LastMove
 
 class SendDataManager:
     @staticmethod
-    def create_board(pieces: dict[tuple[int, int], Piece], size: int) -> list[list[dict | None]]:
+    def create_board(pieces: dict[tuple[int, int], PieceBase], size: int) -> list[list[dict | None]]:
         board = []
         for y in range(size):
             row = []
@@ -46,15 +48,17 @@ class SendDataManager:
         }
 
     @staticmethod
-    def get_legal_moves(pieces: dict[tuple[int, int], Piece]):
-        legals = {}
-        ally_blocks = {}
-        for piece in pieces.values():
-            legals[piece.piece_id], ally_blocks[piece.piece_id] = piece.get_legal_moves(pieces)
+    def get_legal_moves_method(pieces: dict[tuple[int, int], Piece], last_move: LastMove):
+        legals: dict[str, list] = {}
+        ally_blocks: dict[str, list] = {}
+
+        for position, piece in pieces.items():
+            legals[piece.piece_id], ally_blocks[piece.piece_id] = piece.get_legal_moves(position, pieces, last_move)
+
         return legals, ally_blocks
 
     @staticmethod
-    def get_legal_places(captured_pieces: list[Piece], pieces: dict[tuple[int, int], Piece], size: int) -> dict:
+    def get_legal_places(captured_pieces: list[Piece], pieces: dict[tuple[int, int], PieceBase], size: int) -> dict:
         legals = {}
         for piece in captured_pieces:
             legal_positions = []
@@ -66,8 +70,8 @@ class SendDataManager:
         return legals
 
     @staticmethod
-    def create_legal_actions(pieces: dict[tuple[int, int], Piece], captured_pieces: list[Piece], size: int) -> dict:
-        legal_moves, ally_blocks = SendDataManager.get_legal_moves(pieces)
+    def create_legal_actions(pieces: dict[tuple[int, int], Piece], last_move: LastMove, captured_pieces: list[Piece], size: int) -> dict:
+        legal_moves, ally_blocks = SendDataManager.get_legal_moves_method(pieces, last_move)
         legal_places = SendDataManager.get_legal_places(captured_pieces, pieces, size)
         actions = {}
         for piece in [*pieces.values(), *captured_pieces]:
@@ -88,7 +92,8 @@ class SendDataManager:
                 game_state["black_captured_pieces"], game_state["white_captured_pieces"]
             ),
             "legalActions": SendDataManager.create_legal_actions(
-                game_state["pieces"], 
+                game_state["pieces"],
+                game_state["last_move"], 
                 [*game_state["black_captured_pieces"], *game_state["white_captured_pieces"]], 
                 game_state["board_size"]
             ),

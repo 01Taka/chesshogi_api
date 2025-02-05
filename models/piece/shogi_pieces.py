@@ -1,4 +1,5 @@
 from models.piece.piece import Piece 
+from models.type import Pieces
 
 class ShogiPiece(Piece):
     DEFAULT_PROMOTE_MOVES = [
@@ -8,8 +9,8 @@ class ShogiPiece(Piece):
     ]
 
 class ShogiKing(ShogiPiece):
-    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=True, is_promoted=False, immobile_row=None, last_move=None, is_rearranged=False):
-        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
+    def __init__(self, piece_id, team, board_size, promote_line, is_banned_place=False, is_banned_promote=True, is_promoted=False, immobile_row=None, last_position=None, is_rearranged=False):
+        super().__init__(piece_id, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_position, is_rearranged)
 
     @staticmethod
     def get_relative_legal_moves(_):
@@ -33,8 +34,8 @@ class ShogiBishop(ShogiPiece):
         return positions, directions
 
 class ShogiPawn(ShogiPiece):
-    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row=1, last_move=None, is_rearranged=False):
-        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
+    def __init__(self, piece_id, team, board_size, promote_line, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row=1, last_position=None, is_rearranged=False):
+        super().__init__(piece_id, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_position, is_rearranged)
 
     @staticmethod
     def get_relative_legal_moves(is_promoted):
@@ -43,19 +44,19 @@ class ShogiPawn(ShogiPiece):
         return directions, None
     
     @staticmethod
-    def has_pawn_in_column(team, x, pieces: dict):
+    def has_pawn_in_column(team, x, pieces: Pieces):
         return any(piece.name == "ShogiPawn" and piece.team == team and not piece.is_promoted and pos[0] == x for pos, piece in pieces.items())
 
-    def can_place(self, position, pieces):
+    def can_place(self, position, pieces: Pieces):
         return super().can_place(position, pieces) and not ShogiPawn.has_pawn_in_column(self.team, position[0], pieces)
     
     @classmethod
-    def can_place_static(cls, position, team, board_size, pieces, immobile_row=None):
+    def can_place_static(cls, position, team, board_size, pieces: Pieces, immobile_row=None):
         return super().can_place_static(position, team, board_size, pieces, immobile_row) and not ShogiPawn.has_pawn_in_column(team, position[0], pieces)
 
 class ShogiLance(ShogiPiece):
-    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row=1, last_move=None, is_rearranged=False):
-        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
+    def __init__(self, piece_id, team, board_size, promote_line, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row=1, last_position=None, is_rearranged=False):
+        super().__init__(piece_id, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_position, is_rearranged)
 
     @staticmethod
     def get_relative_legal_moves(is_promoted):
@@ -64,8 +65,8 @@ class ShogiLance(ShogiPiece):
         return positions, directions
 
 class ShogiKnight(ShogiPiece):
-    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row=2, last_move=None, is_rearranged=False):
-        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
+    def __init__(self, piece_id, team, board_size, promote_line, is_banned_place=False, is_banned_promote=False, is_promoted=False, immobile_row=2, last_position=None, is_rearranged=False):
+        super().__init__(piece_id, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_position, is_rearranged)
 
     @staticmethod
     def get_relative_legal_moves(is_promoted):
@@ -74,8 +75,8 @@ class ShogiKnight(ShogiPiece):
         return directions, None
 
 class ShogiGold(ShogiPiece):
-    def __init__(self, piece_id, position, team, board_size, promote_line, is_banned_place=False, is_banned_promote=True, is_promoted=False, immobile_row=None, last_move=None, is_rearranged=False):
-        super().__init__(piece_id, position, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_move, is_rearranged)
+    def __init__(self, piece_id, team, board_size, promote_line, is_banned_place=False, is_banned_promote=True, is_promoted=False, immobile_row=None, last_position=None, is_rearranged=False):
+        super().__init__(piece_id, team, board_size, promote_line, is_banned_place, is_banned_promote, is_promoted, immobile_row, last_position, is_rearranged)
 
     @staticmethod
     def get_relative_legal_moves(_):

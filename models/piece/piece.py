@@ -1,8 +1,9 @@
+from models.type import PieceBase, Pieces
+
 class Piece:
     def __init__(
             self,
             piece_id: str,
-            position: None | tuple[int, int],
             team: str,
             board_size: int,
             promote_line: int,
@@ -10,7 +11,7 @@ class Piece:
             is_banned_promote=False,
             is_promoted=False,
             immobile_row=None,
-            last_move=None,
+            last_position=None,
             is_rearranged=False
     ):
         self.__piece_id = piece_id
@@ -19,10 +20,10 @@ class Piece:
         self.__is_banned_place = is_banned_place
         self.__is_banned_promote = is_banned_promote
         self.__immobile_row = immobile_row
+
         self.__is_rearranged = is_rearranged
 
-        self.__position = position
-        self.__last_move = last_move
+        self.__last_position = last_position
         self.__team = team
         self.__is_promoted = is_promoted
 
@@ -32,12 +33,12 @@ class Piece:
         return self.__piece_id
 
     @property
-    def position(self):
-        return tuple(self.__position) if self.__position else None
+    def last_position(self):
+        return self.__last_position
 
     @property
-    def last_move(self):
-        return self.__last_move
+    def is_first_move(self):
+        return not self.__last_position
 
     @property
     def team(self):
@@ -59,6 +60,10 @@ class Piece:
     @property
     def is_promoted(self):
         return self.__is_promoted
+    
+    @is_promoted.setter
+    def is_promoted(self, value):
+        self.__is_promoted = bool(value)
 
     @property
     def is_banned_place(self):
@@ -96,40 +101,38 @@ class Piece:
     @staticmethod
     def UP_DOWN_LEFT_RIGHT():
         return [(0, 1), (1, 0), (0, -1), (-1, 0)].copy()
-
-
-    # ---- Primary Methods ----
-    def set_promote(self, is_promote, prev_position_y=None):
-        if is_promote:
-            is_out_and_promote = prev_position_y and self.can_promote(prev_position_y)
-            if self.can_promote(self.position[1]) or is_out_and_promote:
-                self.__is_promoted = True
-        else:
-            self.__is_promoted = False
+    
+    def to_promote_with_verification(self, from_y, to_y):
+        if not self.is_banned_promote and Piece.can_promote_static(self.team, from_y, to_y, self.board_size, self.promote_line):
+            self.is_promoted = True
 
     def on_captured(self, captured_team):
-        self.__position = None
-        self.set_promote(False)
+        self.is_promoted = False
         self.team = captured_team
 
-    def on_move(self, position, pieces: dict, auto_promote=True):
-        is_valid_pieces = self.position and pieces.get(self.position) and pieces[self.position].piece_id == self.piece_id
-        moves, _ = self.get_legal_moves(pieces)
-        if is_valid_pieces and position in moves:
-            self.__last_move = (self.position)
-            self.__position = position
+    def on_move_with_verification(self, from_position, to_position, pieces: Pieces, last_move, auto_promote=True):
+        move_piece = pieces.get(from_position)
+        if not move_piece or move_piece.piece_id != self.piece_id:
+            raise ValueError(f"Invalid piece. piece: {move_piece}")
+
+        moves, _ = self.get_legal_moves(from_position, pieces, last_move)
+        if to_position in moves:
+            self.on_move(to_position, auto_promote)
+        else:
+            raise ValueError(f"Invalid move. movables: {moves}, got position: {to_position}")
+
+    def on_move(self, to_position, auto_promote=True):
+        self.__last_position = to_position
 
         # Auto-promote if moving into an immobile position
-        if auto_promote and self.immobile_row and not Piece.is_behind_line(self.team, self.board_size, position[1], self.immobile_row):
-            self.set_promote(True)
+        if auto_promote and self.immobile_row and not Piece.is_behind_line(self.team, self.board_size, to_position[1], self.immobile_row):
+            self.is_promoted = True
 
-    def on_place(self, position, pieces: dict):
+    def on_place(self, position, pieces: Pieces):
         if self.can_place(position, pieces):
-            self.__position = position
-            self.__last_move = position
             self.__is_rearranged = True
 
-    def can_place(self, position, pieces: dict) -> bool:
+    def can_place(self, position, pieces: dict[tuple[int, int], PieceBase]) -> bool:
         is_within_board = Piece.is_within_board(self.board_size, position)
         is_empty_position = not pieces.get(position)
         is_valid_row = not self.immobile_row or Piece.is_behind_line(self.team, self.board_size, position[1], self.immobile_row)
@@ -141,14 +144,9 @@ class Piece:
             and is_valid_row
         )
 
-    def can_promote(self, y):
-        """Check if the piece can be promoted."""
-        is_valid_row = self.promote_line and not Piece.is_behind_line(self.team, self.board_size, y, self.promote_line)
-        return not self.is_banned_promote and is_valid_row
-
-    def get_legal_moves(self, pieces: dict):
-        if self.position:
-            return self.get_legal_moves_static(self.position, self.team, self.is_promoted, self.board_size, pieces, not self.last_move, self.is_rearranged)
+    def get_legal_moves(self, position, pieces: dict[tuple[int, int], PieceBase], last_move=None):
+        if position:
+            return self.get_legal_moves_static(position, self.team, self.is_promoted, self.board_size, pieces, self.is_first_move, self.is_rearranged, last_move)
         else:
             return [], []
 
@@ -161,6 +159,10 @@ class Piece:
     @staticmethod
     def is_behind_line(team, board_size, y, line):
         return (team == 'white' and y >= line) or (team == 'black' and y <= board_size - line - 1)
+    
+    @staticmethod
+    def can_promote_static(from_y, to_y, team, board_size, promote_line):
+        return any(isinstance(y, int) and Piece.is_behind_line(team, board_size, y, promote_line) for y in [from_y, to_y])
 
     @staticmethod
     def get_coordinates_between_points(start, end):
@@ -209,7 +211,7 @@ class Piece:
         raise NotImplementedError("This method must be overridden in a subclass")
 
     @staticmethod
-    def get_valid_moves(position, team, board_size, pieces: dict, positions=None, directions=None):
+    def get_valid_moves(position, team, board_size, pieces: dict[tuple[int, int], PieceBase], positions=None, directions=None):
         moves = []
 
         ally_blocks = []
@@ -304,12 +306,13 @@ class Piece:
     
     # ---- Class Methods ----
     @classmethod
-    def get_legal_moves_static(cls, position, team, is_promoted, board_size, pieces: dict, is_first_move=False, is_rearranged=False):
+    def get_legal_moves_static(cls, position, team, is_promoted, board_size, pieces: dict[tuple[int, int], PieceBase], is_first_move=False, is_rearranged=False, last_move=None):
         positions, directions = cls.get_relative_legal_moves(is_promoted)
         return Piece.get_valid_moves(position, team, board_size, pieces, positions, directions)
     
+    
     @classmethod
-    def can_place_static(cls, position: tuple[int, int], team, board_size, pieces: dict, immobile_row=None):
+    def can_place_static(cls, position: tuple[int, int], team, board_size, pieces: dict[tuple[int, int], PieceBase], immobile_row=None):
         is_within_board = Piece.is_within_board(board_size, position)
         is_empty_position = not pieces.get(position)
         is_valid_row = not immobile_row or Piece.is_behind_line(team, board_size, position[1], immobile_row)
@@ -321,7 +324,7 @@ class Piece:
         )
 
     @classmethod
-    def get_legal_places_static(cls, team, board_size, pieces: dict, immobile_row=None) -> list[tuple[int, int]]:
+    def get_legal_places_static(cls, team, board_size, pieces: dict[tuple[int, int], PieceBase], immobile_row=None) -> list[tuple[int, int]]:
         positions = []
         for x in range(board_size):
             for y in range(board_size):
@@ -339,7 +342,6 @@ class Piece:
         return {
             "class_name": self.__class__.__name__,
             "piece_id": self.__piece_id,
-            "position": self.__position,
             "team": self.__team,
             "board_size": self.__board_size,
             "promote_line": self.__promote_line,
@@ -347,6 +349,6 @@ class Piece:
             "is_banned_promote": self.__is_banned_promote,
             "is_promoted": self.__is_promoted,
             "immobile_row": self.__immobile_row,
-            "last_move": self.__last_move,
+            "last_position": self.__last_position,
             "is_rearranged": self.__is_rearranged
         }

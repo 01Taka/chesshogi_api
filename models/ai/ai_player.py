@@ -1,5 +1,7 @@
 from models.ai.light import LightBoard, LightPlayer
 from models.piece.piece import Piece
+from models.piece.chess_pieces import ChessPawn
+from models.game.game import Game
 from models.piece.pieces_info import PIECE_CLASSES, PIECE_VALUES, POSITION_SCORES_SETTING
 import random
 
@@ -9,7 +11,7 @@ class AIPlayer:
     PROMOTE_LINE = 3
 
     @staticmethod
-    def take_action(game, depth: int=3):
+    def take_action(game: Game, depth: int=3):
         try:
             white_player = LightPlayer(game.white)
             black_player = LightPlayer(game.black)
@@ -106,8 +108,8 @@ class AIPlayer:
         # Evaluate captured pieces
         for team, multiplier in [(AIPlayer.POSITIVE_TEAM, 1), (AIPlayer.NEGATIVE_TEAM, -1)]:
             player = board.get_player(team)
-            for piece_name, count in player.captured_pieces.items():
-                score += multiplier * PIECE_VALUES[piece_name] * count
+            for piece_name, ids in player.captured_pieces.items():
+                score += multiplier * PIECE_VALUES[piece_name] * len(ids)
 
         return score
 
@@ -127,11 +129,13 @@ class AIPlayer:
         possible_moves = []
         enemy_moves = []
 
+        last_move = board.get_last_move()
+
         for from_pos, piece in board.pieces.items():
             PieceClass: Piece = PIECE_CLASSES[piece.name]
             legal_moves, ally_blocks = PieceClass.get_legal_moves_static(
                 from_pos, piece.team, piece.is_promoted, board.board_size, 
-                board.pieces, piece.is_first_move, piece.is_rearranged
+                board.pieces, piece.is_first_move, piece.is_rearranged, last_move
             )
 
             if piece.team == team:
@@ -167,7 +171,7 @@ class AIPlayer:
         player = board.black_player if team == "black" else board.white_player
         return [
             {"type": "place", "team": team, "name": piece_name, "position": position}
-            for piece_name, remaining in player.captured_pieces.items() if remaining >= 1 and board.placeable_state[piece_name]
+            for piece_name, ids in player.captured_pieces.items() if len(ids) >= 1 and board.placeable_state[piece_name]
             for position in PIECE_CLASSES[piece_name].get_legal_places_static(
                 team, board.board_size, board.pieces, board.immobile_rows.get(piece_name)
             )

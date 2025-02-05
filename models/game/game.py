@@ -108,7 +108,7 @@ class Game:
 
     def perform_action(self, target_piece_id, promote, action_type, x, y):
         # Use ActionManager to perform the action
-        last_move = ActionManager.action(self.current_player, self.board, target_piece_id, promote, action_type, x, y)
+        last_move = ActionManager.action(self.current_player, self.board, target_piece_id, promote, action_type, x, y, self.last_move)
 
         # Update the last move and check for repetition
         self.last_move = last_move
