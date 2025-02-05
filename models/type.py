@@ -8,7 +8,7 @@ class PieceBase(NamedTuple):
     is_first_move: bool
     is_rearranged: bool
 
-type Pieces = dict[tuple[int, int], PieceBase]
+Pieces = dict[tuple[int, int], PieceBase]
 
 class PiecePosition(TypedDict):
     piece: PieceBase
